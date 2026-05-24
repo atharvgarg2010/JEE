@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronDown, ChevronRight, BookOpen, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { ExplorerQuestionListSkeleton } from "@/components/skeletons/dashboard-skeletons";
 import type {
   ExplorerChapterNode,
   ExplorerLeaf,
@@ -267,7 +268,7 @@ export function ExplorerTree({
         </h2>
 
         {loadingQuestions ? (
-          <p className="text-zinc-500 animate-pulse-soft">Loading questions...</p>
+          <ExplorerQuestionListSkeleton />
         ) : !selectedBucket ? (
           <p className="rounded-xl border border-dashed border-zinc-700 p-8 text-center text-zinc-500">
             Expand a subject and chapter, then pick a module category or difficulty level.

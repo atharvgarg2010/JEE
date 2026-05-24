@@ -5,6 +5,7 @@ import type {
   Question,
   QuestionType,
   QuestionWithRelations,
+  QuestionCorrectAnswer,
   TeacherQuestionStats,
 } from "@/types/questions";
 
@@ -17,7 +18,7 @@ export interface CreateQuestionInput {
   question_type: QuestionType;
   question_text: string;
   options: McqOption[] | null;
-  correct_answer: string;
+  correct_answer: QuestionCorrectAnswer;
   solution: string;
   tags: string[];
 }
@@ -34,13 +35,66 @@ export interface QuestionFilters {
   offset?: number;
 }
 
+function normalizeOptionItem(raw: unknown, index: number): McqOption {
+  if (raw == null) {
+    return { id: `opt_${index + 1}`, text: "" };
+  }
+  if (typeof raw === "string") {
+    const text = raw.trim();
+    return { id: `opt_${index + 1}`, text };
+  }
+  const item = raw as Record<string, unknown>;
+  const text = String(item.text ?? item.id ?? "").trim();
+  const id = String(item.id ?? item.text ?? `opt_${index + 1}`).trim();
+  return { id, text };
+}
+
 function parseOptions(raw: unknown): McqOption[] | null {
-  if (!raw) return null;
-  if (typeof raw === "string") return JSON.parse(raw) as McqOption[];
-  return raw as McqOption[];
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    const value = raw.trim();
+    if (!value) return null;
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.map(normalizeOptionItem);
+      }
+    } catch {
+      // Fallback to comma-separated list
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((text, index) => ({ id: `opt_${index + 1}`, text }));
+    }
+  }
+  if (Array.isArray(raw)) {
+    return raw.map(normalizeOptionItem);
+  }
+  return null;
+}
+
+function parseTags(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.map((tag) => String(tag ?? "").trim()).filter(Boolean);
+  }
+  if (typeof raw === "string") {
+    return raw
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+  return [];
 }
 
 function mapQuestion(row: Record<string, unknown>): Question {
+  const rawCorrect = row.correct_answer;
+  const correctAnswer =
+    row.question_type === "integer"
+      ? Number(rawCorrect)
+      : String(rawCorrect ?? "");
+
   return {
     id: row.id as string,
     teacher_id: row.teacher_id as string,
@@ -51,9 +105,9 @@ function mapQuestion(row: Record<string, unknown>): Question {
     question_type: row.question_type as QuestionType,
     question_text: row.question_text as string,
     options: parseOptions(row.options),
-    correct_answer: row.correct_answer as string,
+    correct_answer: correctAnswer,
     solution: row.solution as string,
-    tags: (row.tags as string[]) ?? [],
+    tags: parseTags(row.tags),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };
@@ -229,5 +283,120 @@ export async function getTeacherQuestionStats(
       name: r.name as string,
       count: r.count as number,
     })),
+  };
+}
+
+export interface TeacherQuestionInsight {
+  id: string;
+  title: string;
+  chapter: string;
+  difficulty: DifficultyLevel | null;
+  type: QuestionType;
+  accuracy: number;
+  wrongCount: number;
+  solutionViews: number;
+  doubtCount: number;
+  attemptCount: number;
+}
+
+export async function getTeacherQuestionInsights(
+  teacherId: string,
+): Promise<{
+  mostWrong: TeacherQuestionInsight[];
+  mostViewed: TeacherQuestionInsight[];
+  highDoubt: TeacherQuestionInsight[];
+  lowAccuracy: TeacherQuestionInsight[];
+}> {
+  const pool = getPool();
+
+  const {
+    rows,
+  } = await pool.query(
+    `WITH tq AS (
+       SELECT q.id, q.question_text, q.question_type, q.difficulty, q.chapter_id
+       FROM questions q
+       WHERE q.teacher_id = $1
+     ),
+     question_attempts AS (
+       SELECT
+         a.question_id,
+         COUNT(*)::int AS attempt_count,
+         COUNT(*) FILTER (WHERE a.is_correct)::int AS correct_count,
+         COUNT(*) FILTER (WHERE NOT a.is_correct)::int AS wrong_count
+       FROM question_attempts a
+       JOIN tq ON tq.id = a.question_id
+       GROUP BY a.question_id
+     ),
+     question_views AS (
+       SELECT
+         question_id,
+         COUNT(*)::int AS solution_views
+       FROM question_solution_views
+       WHERE question_id IN (SELECT id FROM tq)
+       GROUP BY question_id
+     ),
+     question_doubts AS (
+       SELECT
+         question_id,
+         COUNT(*)::int AS doubt_count
+       FROM student_question_progress p
+       WHERE question_id IN (SELECT id FROM tq)
+         AND p.doubt_marked
+         AND NOT COALESCE(p.doubt_resolved, FALSE)
+       GROUP BY question_id
+     )
+     SELECT
+       q.id,
+       q.question_text AS title,
+       c.name AS chapter,
+       q.difficulty,
+       q.question_type AS type,
+       COALESCE(a.attempt_count, 0)::int AS attempt_count,
+       COALESCE(a.correct_count, 0)::int AS correct_count,
+       COALESCE(a.wrong_count, 0)::int AS wrong_count,
+       COALESCE(v.solution_views, 0)::int AS solution_views,
+       COALESCE(d.doubt_count, 0)::int AS doubt_count
+     FROM tq q
+     LEFT JOIN question_attempts a ON a.question_id = q.id
+     LEFT JOIN question_views v ON v.question_id = q.id
+     LEFT JOIN question_doubts d ON d.question_id = q.id
+     JOIN chapters c ON c.id = q.chapter_id`,
+    [teacherId],
+  );
+
+  const questions = rows.map((row) => {
+    const attemptCount = Number(row.attempt_count ?? 0);
+    const correctCount = Number(row.correct_count ?? 0);
+    const accuracy = attemptCount > 0 ? Math.round((correctCount / attemptCount) * 100) : 0;
+    return {
+      id: row.id as string,
+      title: (row.title as string).slice(0, 120),
+      chapter: row.chapter as string,
+      difficulty: (row.difficulty as DifficultyLevel | null) ?? null,
+      type: row.type as QuestionType,
+      accuracy,
+      wrongCount: Number(row.wrong_count ?? 0),
+      solutionViews: Number(row.solution_views ?? 0),
+      doubtCount: Number(row.doubt_count ?? 0),
+      attemptCount,
+    };
+  });
+
+  return {
+    mostWrong: questions
+      .filter((q) => q.attemptCount > 0)
+      .sort((a, b) => b.wrongCount - a.wrongCount || a.accuracy - b.accuracy)
+      .slice(0, 9),
+    mostViewed: questions
+      .sort((a, b) => b.solutionViews - a.solutionViews || b.attemptCount - a.attemptCount)
+      .slice(0, 9),
+    highDoubt: questions
+      .filter((q) => q.doubtCount > 0)
+      .sort((a, b) => b.doubtCount - a.doubtCount || a.accuracy - b.accuracy)
+      .slice(0, 9),
+    lowAccuracy: questions
+      .filter((q) => q.attemptCount > 0)
+      .sort((a, b) => a.accuracy - b.accuracy || b.attemptCount - a.attemptCount)
+      .slice(0, 9),
   };
 }

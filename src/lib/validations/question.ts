@@ -13,10 +13,18 @@ export const createQuestionSchema = z
     difficulty: z.enum(["easy", "medium", "hard"]).optional().nullable(),
     questionType: z.enum(["mcq", "integer"]),
     questionText: z.string().min(10, "Question must be at least 10 characters"),
-    options: z.array(mcqOptionSchema).optional().nullable(),
-    correctAnswer: z.string().min(1, "Correct answer is required"),
+    options: z
+      .union([
+        z.array(mcqOptionSchema),
+        z.array(z.string().min(1)),
+      ])
+      .optional()
+      .nullable(),
+    correctAnswer: z.union([z.string().min(1), z.number()]),
     solution: z.string().min(5, "Solution must be at least 5 characters"),
-    tags: z.array(z.string().min(1)).max(10).default([]),
+    tags: z.union([z.array(z.string().min(1)), z.string()])
+      .optional()
+      .default([]),
     categoryRequiresDifficulty: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
@@ -29,22 +37,63 @@ export const createQuestionSchema = z
     }
 
     if (data.questionType === "mcq") {
-      if (!data.options || data.options.length < 2) {
+      const options = Array.isArray(data.options)
+        ? data.options.map((option) =>
+            typeof option === "string"
+              ? { id: option.trim(), text: option.trim() }
+              : {
+                  id: String(option.id ?? option.text ?? "").trim(),
+                  text: String(option.text ?? option.id ?? "").trim(),
+                },
+          )
+        : [];
+
+      if (options.length < 2) {
         ctx.addIssue({
           code: "custom",
           message: "MCQ requires at least 2 options",
           path: ["options"],
         });
-      } else if (!data.options.some((o) => o.id === data.correctAnswer)) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Correct answer must match an option",
-          path: ["correctAnswer"],
-        });
+      } else {
+        const normalizedAnswer =
+          typeof data.correctAnswer === "number"
+            ? String(data.correctAnswer)
+            : data.correctAnswer.trim();
+
+        const normalizedLetters = options.map((_, index) =>
+          String.fromCharCode(65 + index).
+            toUpperCase(),
+        );
+
+        const matchesOptionId = options.some(
+          (option) => option.id === normalizedAnswer,
+        );
+        const matchesOptionText = options.some(
+          (option) => option.text === normalizedAnswer,
+        );
+        const matchesLetter = normalizedLetters.includes(
+          normalizedAnswer.toUpperCase(),
+        );
+
+        if (!matchesOptionId && !matchesOptionText && !matchesLetter) {
+          ctx.addIssue({
+            code: "custom",
+            message:
+              "Correct answer must match an option id, option text, or option letter",
+            path: ["correctAnswer"],
+          });
+        }
       }
     }
 
     if (data.questionType === "integer") {
+      if (data.options && Array.isArray(data.options) && data.options.length > 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Integer questions must not include options",
+          path: ["options"],
+        });
+      }
       const num = Number(data.correctAnswer);
       if (Number.isNaN(num)) {
         ctx.addIssue({

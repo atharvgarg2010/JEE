@@ -48,9 +48,13 @@ export async function POST(request: Request) {
       questionType: body.questionType,
       questionText: body.questionText,
       options: body.options,
-      correctAnswer: String(body.correctAnswer ?? ""),
+      correctAnswer: body.correctAnswer,
       solution: body.solution ?? "",
-      tags: Array.isArray(body.tags) ? body.tags : [],
+      tags: Array.isArray(body.tags)
+        ? body.tags
+        : typeof body.tags === "string"
+        ? body.tags
+        : [],
       categoryRequiresDifficulty: category?.supports_difficulty ?? false,
     });
 
@@ -59,6 +63,29 @@ export async function POST(request: Request) {
     }
 
     const data = parsed.data;
+    const normalizedTags = Array.isArray(data.tags)
+      ? data.tags
+      : String(data.tags)
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean);
+    const normalizedCorrectAnswer =
+      data.questionType === "integer"
+        ? Number(data.correctAnswer)
+        : String(data.correctAnswer);
+
+    // Normalize options to McqOption[] | null regardless of whether the
+    // Zod schema inferred string[] or McqOption[].
+    const rawOptions = data.questionType === "mcq" ? (data.options ?? []) : null;
+    const normalizedOptions: import("@/types/questions").McqOption[] | null =
+      rawOptions === null
+        ? null
+        : rawOptions.map((opt, index) =>
+            typeof opt === "string"
+              ? { id: `opt_${index + 1}`, text: opt.trim() }
+              : { id: String(opt.id ?? `opt_${index + 1}`), text: String(opt.text ?? "") },
+          );
+
     const question = await createQuestion({
       teacher_id: user.id,
       subject_id: data.subjectId,
@@ -67,10 +94,10 @@ export async function POST(request: Request) {
       difficulty: data.difficulty ?? null,
       question_type: data.questionType,
       question_text: data.questionText,
-      options: data.questionType === "mcq" ? (data.options ?? []) : null,
-      correct_answer: data.correctAnswer,
+      options: normalizedOptions,
+      correct_answer: normalizedCorrectAnswer,
       solution: data.solution,
-      tags: data.tags,
+      tags: normalizedTags,
     });
 
     return jsonSuccess({ question }, 201);

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, BookOpen } from "lucide-react";
 import { ProgressRing } from "@/components/dashboard/progress-ring";
+import { ChapterGridSkeleton } from "@/components/skeletons/dashboard-skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ChapterSummary, SubjectSummary } from "@/types/dashboard";
 
 interface SubjectPageClientProps {
@@ -29,7 +31,16 @@ export function SubjectPageClient({ slug, subjectName }: SubjectPageClientProps)
   }, [slug]);
 
   if (loading) {
-    return <p className="py-20 text-center text-zinc-500">Loading chapters...</p>;
+    return (
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <ChapterGridSkeleton />
+      </div>
+    );
   }
 
   return (

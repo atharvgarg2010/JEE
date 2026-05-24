@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, HelpCircle } from "lucide-react";
 import { QuestionQueueList } from "@/components/dashboard/question-queue-list";
+import { QuestionQueueListSkeleton } from "@/components/skeletons/dashboard-skeletons";
 import { cn } from "@/lib/utils";
 import type { QuestionListItem } from "@/types/dashboard";
 
@@ -84,7 +85,7 @@ export function DoubtsClient() {
       </div>
 
       {loading ? (
-        <p className="text-zinc-500">Loading doubts...</p>
+        <QuestionQueueListSkeleton />
       ) : (
         <QuestionQueueList
           questions={questions}

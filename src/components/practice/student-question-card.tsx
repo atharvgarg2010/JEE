@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { stripMathForPreview } from "@/components/questions/question-markdown";
 import type { QuestionStatus, StudentQuestionWithAttempt } from "@/types/questions";
 
 interface StudentQuestionCardProps {
@@ -46,10 +47,9 @@ export function StudentQuestionCard({
   subjectId,
   chapterId,
 }: StudentQuestionCardProps) {
+  const rawPreview = stripMathForPreview(question.question_text);
   const preview =
-    question.question_text.length > 100
-      ? `${question.question_text.slice(0, 100)}...`
-      : question.question_text;
+    rawPreview.length > 100 ? `${rawPreview.slice(0, 100)}...` : rawPreview;
 
   const params = new URLSearchParams({
     subjectId,

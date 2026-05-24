@@ -40,9 +40,19 @@ export function TeacherLoginForm() {
       title="Teacher sign in"
       description="Faculty access for batch management"
       footer={
-        <Link href="/login/student" className="text-violet-400 hover:underline">
-          Student login instead
-        </Link>
+        <div className="flex flex-col gap-1.5">
+          <span>
+            Don&apos;t have an account?{" "}
+            <Link href="/signup/teacher" className="text-violet-400 hover:underline">
+              Sign up
+            </Link>
+          </span>
+          <span>
+            <Link href="/login/student" className="text-violet-400 hover:underline">
+              Student login instead
+            </Link>
+          </span>
+        </div>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">

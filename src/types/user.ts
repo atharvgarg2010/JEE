@@ -6,6 +6,9 @@ export interface User {
   username: string;
   roll_number: string | null;
   batch_code: string | null;
+  subject: string | null;
+  teacher_code: string | null;
+  experience: string | null;
   role: UserRole;
   created_at: string;
   updated_at: string;
@@ -23,5 +26,8 @@ export interface PublicUser {
   username: string;
   roll_number: string | null;
   batch_code: string | null;
+  subject: string | null;
+  teacher_code: string | null;
+  experience: string | null;
   role: UserRole;
 }

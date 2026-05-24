@@ -19,7 +19,7 @@ function loginUrlForPrefix(prefix: string, request: NextRequest): URL {
   return url;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySessionToken(token) : null;
@@ -51,6 +51,7 @@ export const config = {
     "/teacher/:path*",
     "/admin/:path*",
     "/signup",
+    "/signup/:path*",
     "/login/:path*",
   ],
 };

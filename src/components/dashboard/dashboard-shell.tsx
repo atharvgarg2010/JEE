@@ -2,11 +2,13 @@ import Link from "next/link";
 import { GraduationCap, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PublicUser } from "@/types/user";
+import type { ReactNode } from "react";
 
 interface DashboardShellProps {
   user: PublicUser;
   children: React.ReactNode;
   navItems?: { href: string; label: string }[];
+  extraActions?: ReactNode;
   wide?: boolean;
 }
 
@@ -14,6 +16,7 @@ export function DashboardShell({
   user,
   children,
   navItems = [],
+  extraActions,
   wide = false,
 }: DashboardShellProps) {
   const maxWidth = wide ? "max-w-7xl" : "max-w-6xl";
@@ -44,6 +47,7 @@ export function DashboardShell({
           </nav>
 
           <div className="flex items-center gap-3">
+            {extraActions}
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-white">{displayName}</p>
               <p className="text-xs text-zinc-500">@{user.username}</p>

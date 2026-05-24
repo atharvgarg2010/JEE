@@ -17,16 +17,42 @@ export interface StudentQuestionRow {
   created_at: string;
 }
 
+function normalizeOptionItem(raw: unknown, index: number): McqOption {
+  if (raw == null) {
+    return { id: `opt_${index + 1}`, text: "" };
+  }
+  if (typeof raw === "string") {
+    const text = raw.trim();
+    return { id: `opt_${index + 1}`, text };
+  }
+  const item = raw as Record<string, unknown>;
+  const text = String(item.text ?? item.id ?? "").trim();
+  const id = String(item.id ?? item.text ?? `opt_${index + 1}`).trim();
+  return { id, text };
+}
+
 function parseOptions(raw: unknown): McqOption[] | null {
   if (raw == null) return null;
   if (typeof raw === "string") {
+    const value = raw.trim();
+    if (!value) return null;
     try {
-      return JSON.parse(raw) as McqOption[];
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.map(normalizeOptionItem);
+      }
     } catch {
-      return null;
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((text, index) => ({ id: `opt_${index + 1}`, text }));
     }
   }
-  return raw as McqOption[];
+  if (Array.isArray(raw)) {
+    return raw.map(normalizeOptionItem);
+  }
+  return null;
 }
 
 /**

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, AlertTriangle } from "lucide-react";
 import { QuestionQueueList } from "@/components/dashboard/question-queue-list";
+import { QuestionQueueListSkeleton } from "@/components/skeletons/dashboard-skeletons";
 import { cn } from "@/lib/utils";
 import type { MistakeFilter, QuestionListItem } from "@/types/dashboard";
 
@@ -73,7 +74,7 @@ export function MistakesClient() {
       </div>
 
       {loading ? (
-        <p className="text-zinc-500 animate-pulse-soft">Loading mistakes...</p>
+        <QuestionQueueListSkeleton />
       ) : (
         <QuestionQueueList
           questions={questions}

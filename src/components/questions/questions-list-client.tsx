@@ -10,6 +10,7 @@ import {
   emptyFilters,
   type QuestionFilterValues,
 } from "@/components/questions/question-filters";
+import { QuestionBankListSkeleton } from "@/components/skeletons/dashboard-skeletons";
 import type {
   Chapter,
   QuestionCategory,
@@ -115,7 +116,7 @@ export function QuestionsListClient() {
       />
 
       {loading ? (
-        <div className="py-16 text-center text-zinc-500">Loading questions...</div>
+        <QuestionBankListSkeleton />
       ) : questions.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-700 py-16 text-center">
           <p className="text-zinc-400">No questions found.</p>

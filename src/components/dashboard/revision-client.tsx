@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, BookMarked } from "lucide-react";
 import { QuestionQueueList } from "@/components/dashboard/question-queue-list";
+import { QuestionQueueListSkeleton } from "@/components/skeletons/dashboard-skeletons";
 import type { QuestionListItem } from "@/types/dashboard";
 
 export function RevisionClient() {
@@ -39,7 +40,7 @@ export function RevisionClient() {
       </div>
 
       {loading ? (
-        <p className="text-zinc-500">Loading revision list...</p>
+        <QuestionQueueListSkeleton />
       ) : (
         <QuestionQueueList
           questions={questions}

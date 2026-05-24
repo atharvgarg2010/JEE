@@ -8,7 +8,10 @@ import {
   Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TeacherNotificationsPanel } from "@/components/teacher/teacher-notifications-panel";
+import { StudentAnalyticsPanel } from "@/components/dashboard/student-analytics-panel";
+import { QuestionInsightsPanel } from "@/components/dashboard/question-insights-panel";
+import { BatchOverviewPanel } from "@/components/dashboard/batch-overview-panel";
+import { QuickActionsPanel } from "@/components/dashboard/quick-actions-panel";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getTeacherQuestionStats } from "@/lib/db/questions";
 
@@ -22,7 +25,7 @@ export default async function TeacherDashboardPage() {
 
   return (
     <div className="space-y-10">
-      <div className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-950/50 via-zinc-900/80 to-zinc-950 p-8 sm:p-10">
+      <div className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-linear-to-br from-violet-950/50 via-zinc-900/80 to-zinc-950 p-8 sm:p-10">
         <div
           className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-violet-600/20 blur-3xl"
           aria-hidden
@@ -93,7 +96,19 @@ export default async function TeacherDashboardPage() {
         ))}
       </div>
 
-      <TeacherNotificationsPanel />
+      {/* NEW: Quick Actions Panel */}
+      <QuickActionsPanel />
+
+      {/* NEW: Student Analytics Panel */}
+      <StudentAnalyticsPanel />
+
+      {/* NEW: Question Insights Panel */}
+      <QuestionInsightsPanel />
+
+      {/* NEW: Batch Overview Panel */}
+      <BatchOverviewPanel />
+
+      {/* Student Requests are now handled by navbar notifications drawer */}
 
       <div>
         <h2 className="mb-4 text-lg font-semibold text-white">

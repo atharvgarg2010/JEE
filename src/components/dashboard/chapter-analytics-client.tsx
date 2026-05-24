@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProgressRing } from "@/components/dashboard/progress-ring";
 import { buildBucketPracticeHref } from "@/lib/practice-links";
+import { ChapterAnalyticsSkeleton } from "@/components/skeletons/dashboard-skeletons";
 import type { CategoryBucketStats, ChapterAnalytics } from "@/types/dashboard";
 
 function BucketCard({
@@ -87,7 +88,7 @@ export function ChapterAnalyticsClient({
   }, [subjectSlug, chapterId]);
 
   if (loading) {
-    return <p className="py-20 text-center text-zinc-500">Loading analytics...</p>;
+    return <ChapterAnalyticsSkeleton />;
   }
 
   if (!analytics) {

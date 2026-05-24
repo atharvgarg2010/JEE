@@ -49,6 +49,41 @@ export const teacherLoginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+export const teacherSignupSchema = z
+  .object({
+    fullName: z
+      .string()
+      .min(2, "Full name must be at least 2 characters")
+      .max(100),
+    username: z
+      .string()
+      .min(3, "Username must be at least 3 characters")
+      .max(30)
+      .regex(
+        /^[a-z0-9_]+$/,
+        "Username can only contain lowercase letters, numbers, and underscores",
+      ),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(128)
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        "Password must include uppercase, lowercase, and a number",
+      ),
+    confirmPassword: z.string(),
+    subject: z.enum(["Physics", "Chemistry", "Maths"] as const, {
+      message: "Please select a subject specialization",
+    }),
+    teacherCode: z.string().max(50).optional(),
+    experience: z.string().max(200).optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
 export type StudentSignupInput = z.infer<typeof studentSignupSchema>;
 export type StudentLoginInput = z.infer<typeof studentLoginSchema>;
 export type TeacherLoginInput = z.infer<typeof teacherLoginSchema>;
+export type TeacherSignupInput = z.infer<typeof teacherSignupSchema>;

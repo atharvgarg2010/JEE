@@ -24,6 +24,8 @@ import { QuestionNumberNav } from "@/components/practice/question-number-nav";
 import { AttemptResultPanel } from "@/components/practice/attempt-result-panel";
 import { AttemptHistoryPanel } from "@/components/practice/attempt-history-panel";
 import { NotifyTeacherButton } from "@/components/practice/notify-teacher-button";
+import { PracticeSessionSkeleton } from "@/components/skeletons/dashboard-skeletons";
+import { QuestionMarkdown } from "@/components/questions/question-markdown";
 import { cn } from "@/lib/utils";
 import type {
   McqOption,
@@ -279,11 +281,7 @@ export function PracticeSessionClient() {
   }
 
   if (loading) {
-    return (
-      <div className="py-20 text-center text-zinc-500 animate-pulse-soft">
-        Loading practice session...
-      </div>
-    );
+    return <PracticeSessionSkeleton />;
   }
 
   if (questions.length === 0) {
@@ -360,9 +358,9 @@ export function PracticeSessionClient() {
                 )}
               </div>
 
-              <p className="whitespace-pre-wrap text-lg leading-relaxed text-zinc-100">
-                {current.question_text}
-              </p>
+              <div className="prose prose-invert text-lg leading-relaxed">
+                <QuestionMarkdown content={current.question_text} />
+              </div>
 
               <div className="mt-8 space-y-3">
                 {current.question_type === "mcq" && current.options ? (
@@ -395,7 +393,7 @@ export function PracticeSessionClient() {
                         <span className="font-semibold text-zinc-500 w-6">
                           {String.fromCharCode(65 + i)}.
                         </span>
-                        <span className="text-zinc-200">{opt.text}</span>
+                        <QuestionMarkdown content={opt.text} className="prose prose-invert m-0 text-zinc-200" />
                       </label>
                     );
                   })
@@ -440,7 +438,9 @@ export function PracticeSessionClient() {
                       </span>
                     )}
                   </p>
-                  <p className="whitespace-pre-wrap text-zinc-300">{solution}</p>
+                  <div className="prose prose-invert text-zinc-300">
+                    <QuestionMarkdown content={solution} />
+                  </div>
                 </AlertDescription>
               </Alert>
             )}

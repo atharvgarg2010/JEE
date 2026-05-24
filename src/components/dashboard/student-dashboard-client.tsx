@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ProgressRing } from "@/components/dashboard/progress-ring";
 import { ContributionCalendar } from "@/components/dashboard/contribution-calendar";
+import { StudentDashboardSkeleton } from "@/components/skeletons/dashboard-skeletons";
 import type { DashboardOverview } from "@/types/dashboard";
 
 const SUBJECT_ICONS: Record<string, typeof Atom> = {
@@ -55,11 +56,7 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
   }, []);
 
   if (loading) {
-    return (
-      <div className="py-24 text-center text-zinc-500 animate-pulse-soft">
-        Loading your dashboard...
-      </div>
-    );
+    return <StudentDashboardSkeleton />;
   }
 
   if (error || !overview) {

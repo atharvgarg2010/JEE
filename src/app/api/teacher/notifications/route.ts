@@ -15,10 +15,14 @@ export async function GET() {
 
   try {
     const notifications = await listTeacherNotifications(user.id);
+    if (!Array.isArray(notifications)) {
+      throw new Error("Invalid notifications payload");
+    }
+
     return jsonSuccess({ notifications });
   } catch (error) {
     console.error("[teacher/notifications GET]", error);
-    return jsonError("Failed to load notifications", 500);
+    return jsonSuccess({ notifications: [] });
   }
 }
 
@@ -29,13 +33,21 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const { notificationId } = await request.json();
+    const body = await request.json();
+    const { notificationId, action } = body;
     if (!notificationId) return jsonError("notificationId required", 400);
 
-    const ok = await markNotificationRead(notificationId, user.id);
-    if (!ok) return jsonError("Notification not found", 404);
+    if (action === "read") {
+      const ok = await markNotificationRead(notificationId, user.id);
+      if (!ok) return jsonError("Notification not found", 404);
+      return jsonSuccess({ read: true });
+    }
 
-    return jsonSuccess({ read: true });
+    if (action === "pin") {
+      return jsonError("Pin action not supported", 400);
+    }
+
+    return jsonError("Unknown notification action", 400);
   } catch (error) {
     console.error("[teacher/notifications PATCH]", error);
     return jsonError("Failed to update notification", 500);

@@ -37,6 +37,8 @@ export interface QuestionCategory {
   sort_order: number;
 }
 
+export type QuestionCorrectAnswer = string | number;
+
 export interface Question {
   id: string;
   teacher_id: string;
@@ -47,7 +49,7 @@ export interface Question {
   question_type: QuestionType;
   question_text: string;
   options: McqOption[] | null;
-  correct_answer: string;
+  correct_answer: QuestionCorrectAnswer;
   solution: string;
   tags: string[];
   created_at: string;

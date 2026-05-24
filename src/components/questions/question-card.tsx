@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BookOpen, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { stripMathForPreview } from "@/components/questions/question-markdown";
 import type { QuestionWithRelations } from "@/types/questions";
 
 interface QuestionCardProps {
@@ -17,10 +18,9 @@ export function QuestionCard({
   onDelete,
   deleting,
 }: QuestionCardProps) {
+  const rawPreview = stripMathForPreview(question.question_text);
   const preview =
-    question.question_text.length > 120
-      ? `${question.question_text.slice(0, 120)}...`
-      : question.question_text;
+    rawPreview.length > 120 ? `${rawPreview.slice(0, 120)}...` : rawPreview;
 
   return (
     <article className="group rounded-2xl border border-zinc-800/60 bg-gradient-to-br from-zinc-900/80 to-zinc-950/80 p-5 transition-all hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-900/10">

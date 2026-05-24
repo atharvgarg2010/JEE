@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { TeacherNotificationsDrawer } from "@/components/teacher/teacher-notifications-drawer";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function TeacherLayout({
@@ -22,6 +23,7 @@ export default async function TeacherLayout({
         { href: "/teacher/questions", label: "Questions" },
         { href: "/teacher/questions/new", label: "Create" },
       ]}
+      extraActions={<TeacherNotificationsDrawer />}
     >
       {children}
     </DashboardShell>

@@ -241,9 +241,18 @@ export function CreateQuestionForm() {
             value={questionText}
             onChange={(e) => setQuestionText(e.target.value)}
             placeholder="Enter the question text..."
-            className="min-h-[140px]"
+            className="min-h-[140px] font-mono text-sm"
             required
           />
+          <p className="mt-1.5 text-xs text-zinc-500">
+            Math: inline{" "}
+            <code className="rounded bg-zinc-800 px-1 text-violet-300">{"\\( x^2 \\)"}</code>
+            {" "}or{" "}
+            <code className="rounded bg-zinc-800 px-1 text-violet-300">{"$x^2$"}</code>
+            {" · "}
+            block{" "}
+            <code className="rounded bg-zinc-800 px-1 text-violet-300">{"$$ E=mc^2 $$"}</code>
+          </p>
         </FormFieldGroup>
 
         {questionType === "mcq" ? (
@@ -277,9 +286,17 @@ export function CreateQuestionForm() {
             value={solution}
             onChange={(e) => setSolution(e.target.value)}
             placeholder="Step-by-step solution..."
-            className="min-h-[160px]"
+            className="min-h-[160px] font-mono text-sm"
             required
           />
+          <p className="mt-1.5 text-xs text-zinc-500">
+            Use{" "}
+            <code className="rounded bg-zinc-800 px-1 text-violet-300">{"$$ \\frac{a}{b} $$"}</code>
+            {" "}
+            for block equations and{" "}
+            <code className="rounded bg-zinc-800 px-1 text-violet-300">{"$x^2$"}</code>
+            {" "}for inline.
+          </p>
         </FormFieldGroup>
 
         <FormFieldGroup label="Tags">

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Compass, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExplorerTree } from "@/components/explorer/explorer-tree";
+import { ExplorerPageSkeleton } from "@/components/skeletons/dashboard-skeletons";
 import type {
   ExplorerSubjectNode,
   StudentQuestionWithAttempt,
@@ -82,11 +83,7 @@ export function QuestionExplorerClient() {
   }
 
   if (loading) {
-    return (
-      <div className="py-24 text-center text-zinc-500 animate-pulse-soft">
-        Loading question explorer...
-      </div>
-    );
+    return <ExplorerPageSkeleton />;
   }
 
   return (

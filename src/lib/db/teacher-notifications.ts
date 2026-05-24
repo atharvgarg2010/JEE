@@ -44,30 +44,35 @@ export async function createTeacherNotification(input: {
 export async function listTeacherNotifications(
   teacherId: string,
 ): Promise<TeacherNotification[]> {
-  const { rows } = await getPool().query(
-    `SELECT
-      n.id, n.student_id, n.teacher_id, n.question_id, n.message,
-      n.chapter_name, n.read, n.created_at,
-      COALESCE(u.full_name, u.username) AS student_name
-     FROM teacher_notifications n
-     JOIN users u ON u.id = n.student_id
-     WHERE n.teacher_id = $1
-     ORDER BY n.read ASC, n.created_at DESC
-     LIMIT 100`,
-    [teacherId],
-  );
+  try {
+    const { rows } = await getPool().query(
+      `SELECT
+        n.id, n.student_id, n.teacher_id, n.question_id, n.message,
+        n.chapter_name, n.read, n.created_at,
+        COALESCE(u.full_name, u.username) AS student_name
+       FROM teacher_notifications n
+       JOIN users u ON u.id = n.student_id
+       WHERE n.teacher_id = $1
+       ORDER BY n.read ASC, n.created_at DESC
+       LIMIT 100`,
+      [teacherId],
+    );
 
-  return rows.map((r) => ({
-    id: r.id as string,
-    student_id: r.student_id as string,
-    student_name: r.student_name as string,
-    teacher_id: r.teacher_id as string,
-    question_id: r.question_id as string,
-    message: r.message as string,
-    chapter_name: r.chapter_name as string | null,
-    read: r.read as boolean,
-    created_at: String(r.created_at),
-  }));
+    return rows.map((r) => ({
+      id: r.id as string,
+      student_id: r.student_id as string,
+      student_name: r.student_name as string,
+      teacher_id: r.teacher_id as string,
+      question_id: r.question_id as string,
+      message: r.message as string,
+      chapter_name: r.chapter_name as string | null,
+      read: r.read as boolean,
+      created_at: String(r.created_at),
+    }));
+  } catch (error) {
+    console.error("[teacher-notifications] listTeacherNotifications error", error);
+    return [];
+  }
 }
 
 export async function markNotificationRead(
@@ -81,6 +86,7 @@ export async function markNotificationRead(
   );
   return (rowCount ?? 0) > 0;
 }
+
 
 export async function countUnreadNotifications(
   teacherId: string,

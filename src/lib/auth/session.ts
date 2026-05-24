@@ -42,6 +42,9 @@ export async function getCurrentUser(): Promise<PublicUser | null> {
     username: user.username,
     roll_number: user.roll_number,
     batch_code: user.batch_code,
+    subject: user.subject,
+    teacher_code: user.teacher_code,
+    experience: user.experience,
     role: user.role,
   };
 }

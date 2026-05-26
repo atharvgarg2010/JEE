@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { ProgressRing } from "@/components/dashboard/progress-ring";
 import { ContributionCalendar } from "@/components/dashboard/contribution-calendar";
 import { StudentDashboardSkeleton } from "@/components/skeletons/dashboard-skeletons";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import type { DashboardOverview } from "@/types/dashboard";
 
 const SUBJECT_ICONS: Record<string, typeof Atom> = {
@@ -27,9 +28,9 @@ const SUBJECT_ICONS: Record<string, typeof Atom> = {
 };
 
 const SUBJECT_GRADIENTS: Record<string, string> = {
-  physics: "from-violet-600/20 to-cyan-950/40 border-violet-500/25",
-  chemistry: "from-emerald-600/20 to-cyan-950/40 border-emerald-500/25",
-  mathematics: "from-amber-600/20 to-cyan-950/40 border-amber-500/25",
+  physics: "border-zinc-800",
+  chemistry: "border-zinc-800",
+  mathematics: "border-zinc-800",
 };
 
 interface StudentDashboardClientProps {
@@ -71,26 +72,24 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
 
   return (
     <div className="space-y-10 animate-fade-in">
-      <div className="relative overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/40 via-zinc-900/80 to-zinc-950 p-8">
-        <p className="mb-2 flex items-center gap-2 text-sm text-cyan-300">
-          <Sparkles className="h-4 w-4" />
-          Student Hub
-        </p>
-        <h1 className="text-3xl font-bold text-white">
-          Hello, {userName}
-        </h1>
-        <p className="mt-2 max-w-xl text-zinc-400">
-          Track PCM progress, fix mistakes, clear doubts, and build your daily streak.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button asChild>
+      <div className="rounded-md border border-zinc-800 bg-zinc-900 p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-100">
+            Hello, {userName}
+          </h1>
+          <p className="mt-1 text-sm text-zinc-400">
+            Track PCM progress, fix mistakes, clear doubts, and build your daily streak.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Button asChild variant="secondary">
             <Link href="/student/explorer">
               <Compass className="h-4 w-4" />
               Explorer
             </Link>
           </Button>
-          <Button variant="secondary" asChild>
-            <Link href="/student/practice">Practice</Link>
+          <Button asChild>
+            <Link href="/student/practice">Resume Practice</Link>
           </Button>
         </div>
       </div>
@@ -134,15 +133,15 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
               icon: Flame,
               color: "text-orange-400",
             },
-          ].map(({ label, value, href, icon: Icon, color }) => (
+            ].map(({ label, value, href, icon: Icon, color }) => (
             <Link
               key={label}
               href={href}
-              className="rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-4 transition-all hover:border-cyan-500/30 hover:bg-zinc-900/80"
+              className="rounded-md border border-zinc-800 bg-zinc-900 p-4 transition-colors hover:bg-zinc-800/50"
             >
               <Icon className={`mb-2 h-5 w-5 ${color}`} />
               <p className="text-xs uppercase tracking-wider text-zinc-500">{label}</p>
-              <p className="mt-1 text-2xl font-bold text-white">{value}</p>
+              <p className="mt-1 text-2xl font-bold text-zinc-100">{value}</p>
             </Link>
           ))}
         </div>
@@ -160,11 +159,13 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
         ].map(({ label, value, icon: Icon }) => (
           <div
             key={label}
-            className="rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-5"
+            className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900 p-4"
           >
-            <Icon className="mb-3 h-5 w-5 text-cyan-400" />
-            <p className="text-xs uppercase tracking-wider text-zinc-500">{label}</p>
-            <p className="mt-1 text-3xl font-bold text-white">{value}</p>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-zinc-500">{label}</p>
+              <p className="mt-1 text-2xl font-bold text-zinc-100">{value}</p>
+            </div>
+            <Icon className="h-6 w-6 text-indigo-400 opacity-80" />
           </div>
         ))}
       </div>
@@ -181,19 +182,19 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
               <Link
                 key={sub.id}
                 href={`/student/subject/${sub.slug}`}
-                className={`group rounded-2xl border bg-gradient-to-br p-6 transition-all hover:scale-[1.02] ${gradient}`}
+                className={`group rounded-md border bg-zinc-900 p-5 transition-colors hover:bg-zinc-800/50 ${gradient}`}
               >
                 <div className="flex items-start justify-between">
-                  <Icon className="h-8 w-8 text-cyan-400" />
+                  <Icon className="h-6 w-6 text-indigo-400" />
                   <ProgressRing
                     value={sub.mastery_percent}
-                    size={56}
-                    stroke={5}
-                    accent="stroke-cyan-400"
+                    size={48}
+                    stroke={4}
+                    accent="stroke-indigo-400"
                   />
                 </div>
-                <h3 className="mt-4 text-xl font-bold text-white">{sub.name}</h3>
-                <p className="mt-1 text-sm text-zinc-400">
+                <h3 className="mt-4 text-lg font-bold text-zinc-100">{sub.name}</h3>
+                <p className="mt-1 text-xs text-zinc-400">
                   {sub.chapters_count} chapters · {sub.attempted}/{sub.total_questions} attempted
                 </p>
               </Link>
@@ -204,28 +205,33 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
 
       {overview.weak_chapters.length > 0 && (
         <section>
-          <h2 className="mb-4 text-lg font-semibold text-white">Weak chapters</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {overview.weak_chapters.map((ch) => (
-              <Link
-                key={ch.chapter_id}
-                href={`/student/subject/${ch.subject_slug}`}
-                className="rounded-xl border border-orange-500/20 bg-orange-950/10 p-4 hover:border-orange-500/40"
-              >
-                <p className="font-medium text-white">{ch.chapter_name}</p>
-                <p className="text-xs text-zinc-500">{ch.subject_name}</p>
-                <div className="mt-3 flex gap-4 text-xs text-zinc-400">
-                  <span>{ch.accuracy_percent}% accuracy</span>
-                  <span>{ch.mistake_count} mistakes</span>
-                  <span>{ch.doubt_count} doubts</span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <h2 className="mb-4 text-lg font-semibold text-white">The Weakness Ledger</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Chapter</TableHead>
+                <TableHead className="hidden md:table-cell">Subject</TableHead>
+                <TableHead>Accuracy</TableHead>
+                <TableHead className="hidden sm:table-cell">Mistakes</TableHead>
+                <TableHead className="hidden sm:table-cell">Pending Doubts</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {overview.weak_chapters.map((ch) => (
+                <TableRow key={ch.chapter_id} className="group cursor-pointer" onClick={() => window.location.href = `/student/subject/${ch.subject_slug}`}>
+                  <TableCell className="font-medium text-zinc-100">{ch.chapter_name}</TableCell>
+                  <TableCell className="hidden md:table-cell text-zinc-400">{ch.subject_name}</TableCell>
+                  <TableCell className="text-red-400 font-mono">{ch.accuracy_percent}%</TableCell>
+                  <TableCell className="hidden sm:table-cell text-zinc-400 font-mono">{ch.mistake_count}</TableCell>
+                  <TableCell className="hidden sm:table-cell text-zinc-400 font-mono">{ch.doubt_count}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </section>
       )}
 
-      <section className="rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-6">
+      <section className="rounded-md border border-zinc-800 bg-zinc-900 p-6">
         <h2 className="mb-4 text-lg font-semibold text-white">Daily practice</h2>
         <ContributionCalendar data={overview.calendar} />
       </section>

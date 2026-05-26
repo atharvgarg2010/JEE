@@ -7,6 +7,7 @@ import {
   Activity, GraduationCap, BarChart2, Megaphone
 } from "lucide-react";
 import Link from "next/link";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 
 export const metadata = {
   title: "Admin Dashboard | JEE Tracker",
@@ -78,49 +79,44 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-10">
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-950/50 via-zinc-900/80 to-zinc-950 p-8 sm:p-10">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-violet-600/20 blur-3xl" aria-hidden />
-        <div className="relative">
-          <p className="mb-2 flex items-center gap-2 text-sm text-violet-300">
-            <BarChart2 className="h-4 w-4" />
+      <div className="rounded-md border border-zinc-800 bg-zinc-900 p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-100">
             Admin Command Center
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Platform Overview
           </h1>
-          <p className="mt-3 max-w-xl text-zinc-400">
+          <p className="mt-1 text-sm text-zinc-400">
             Manage batches, teachers, and students across your entire institute.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/admin/batches/new"
-              className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-500"
-            >
-              + New Batch
-            </Link>
-            <Link
-              href="/admin/analytics"
-              className="inline-flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800/60 px-5 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:border-violet-500/40"
-            >
-              View Analytics
-            </Link>
-          </div>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/admin/analytics"
+            className="inline-flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-200 transition-colors hover:bg-zinc-700"
+          >
+            View Analytics
+          </Link>
+          <Link
+            href="/admin/batches/new"
+            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+          >
+            + New Batch
+          </Link>
         </div>
       </div>
 
       {/* KPI Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {kpiCards.map(({ label, value, total, icon: Icon, accent, bg, href }) => {
+        {kpiCards.map(({ label, value, total, icon: Icon, href }) => {
           const card = (
-            <div className={`rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-5 backdrop-blur-sm transition-colors ${href ? "hover:border-violet-500/30 cursor-pointer" : ""}`}>
-              <div className={`mb-3 inline-flex rounded-xl p-2 ${bg}`}>
-                <Icon className={`h-5 w-5 ${accent}`} />
+            <div className={`flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900 p-4 transition-colors ${href ? "hover:bg-zinc-800/50 cursor-pointer" : ""}`}>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-zinc-500">{label}</p>
+                <p className={`mt-1 text-2xl font-bold text-zinc-100`}>{value}</p>
+                {total !== undefined && (
+                  <p className="mt-1 text-xs text-zinc-600">{total} total</p>
+                )}
               </div>
-              <p className="text-xs uppercase tracking-wider text-zinc-500">{label}</p>
-              <p className={`mt-1 text-3xl font-bold text-white`}>{value}</p>
-              {total !== undefined && (
-                <p className="mt-1 text-xs text-zinc-600">{total} total</p>
-              )}
+              <Icon className="h-6 w-6 text-indigo-400 opacity-80" />
             </div>
           );
           return href ? (
@@ -139,73 +135,68 @@ export default async function AdminDashboardPage() {
             View all →
           </Link>
         </div>
-        <div className="overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
+        <div className="w-full">
           {activeBatches.length === 0 ? (
-            <div className="flex flex-col items-center py-12 text-center">
+            <div className="flex flex-col items-center py-12 text-center rounded-md border border-zinc-800 bg-zinc-900/50">
               <Layers className="mb-3 h-10 w-10 text-zinc-700" />
               <p className="text-sm text-zinc-500">No active batches yet.</p>
               <Link
                 href="/admin/batches/new"
-                className="mt-3 text-sm font-medium text-violet-400 hover:text-violet-300"
+                className="mt-3 text-sm font-medium text-indigo-400 hover:text-indigo-300"
               >
                 Create your first batch →
               </Link>
             </div>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-800/80">
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Batch</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">Students</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">Teachers</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">Avg Accuracy</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">Doubts</th>
-                  <th className="px-3 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800/40">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Batch</TableHead>
+                  <TableHead className="text-right hidden sm:table-cell">Students</TableHead>
+                  <TableHead className="text-right hidden sm:table-cell">Teachers</TableHead>
+                  <TableHead className="text-right">Avg Accuracy</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">Doubts</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {activeBatches.map((b) => (
-                  <tr key={b.id} className="transition-colors hover:bg-zinc-800/30">
-                    <td className="px-5 py-3.5">
-                      <p className="font-medium text-white">{b.name}</p>
+                  <TableRow key={b.id}>
+                    <TableCell>
+                      <p className="font-medium text-zinc-100">{b.name}</p>
                       <p className="text-xs text-zinc-500">{b.code}</p>
-                    </td>
-                    <td className="px-5 py-3.5 text-right text-zinc-300">{b.student_count}</td>
-                    <td className="px-5 py-3.5 text-right">
-                      <span className={`text-sm font-medium ${b.teacher_count >= 3 ? "text-emerald-400" : "text-amber-400"}`}>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-zinc-400 hidden sm:table-cell">{b.student_count}</TableCell>
+                    <TableCell className="text-right font-mono hidden sm:table-cell">
+                      <span className={`${b.teacher_count >= 3 ? "text-indigo-400" : "text-amber-400"}`}>
                         {b.teacher_count}/3
                       </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
                       {b.avg_accuracy !== null ? (
-                        <span className={`font-medium ${b.avg_accuracy >= 70 ? "text-emerald-400" : b.avg_accuracy >= 50 ? "text-amber-400" : "text-red-400"}`}>
+                        <span className={`${b.avg_accuracy >= 70 ? "text-indigo-400" : b.avg_accuracy >= 50 ? "text-amber-400" : "text-red-400"}`}>
                           {b.avg_accuracy}%
                         </span>
                       ) : (
                         <span className="text-zinc-600">—</span>
                       )}
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
+                    </TableCell>
+                    <TableCell className="text-right font-mono hidden md:table-cell">
                       {b.doubts_pending > 0 ? (
-                        <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400">
-                          {b.doubts_pending}
-                        </span>
+                        <span className="text-red-400 font-semibold">{b.doubts_pending}</span>
                       ) : (
                         <span className="text-zinc-600">0</span>
                       )}
-                    </td>
-                    <td className="px-3 py-3.5">
-                      <Link
-                        href={`/admin/batches/${b.id}`}
-                        className="text-xs text-zinc-500 hover:text-violet-400"
-                      >
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/admin/batches/${b.id}`} className="text-xs text-indigo-400 hover:text-indigo-300">
                         Manage →
                       </Link>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
         </div>
       </div>
@@ -220,9 +211,9 @@ export default async function AdminDashboardPage() {
           <Link
             key={c.title}
             href={c.href}
-            className="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-5 transition-colors hover:border-violet-500/40"
+            className="rounded-md border border-zinc-800 bg-zinc-900 p-5 transition-colors hover:bg-zinc-800/50"
           >
-            <c.icon className={`mb-3 h-6 w-6 ${c.color}`} />
+            <c.icon className={`mb-3 h-6 w-6 text-indigo-400`} />
             <h3 className="font-semibold text-white">{c.title}</h3>
             <p className="mt-1 text-sm text-zinc-500">{c.desc}</p>
           </Link>

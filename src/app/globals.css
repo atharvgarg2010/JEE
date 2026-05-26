@@ -6,12 +6,12 @@
   --foreground: #fafafa;
   --card: #09090b;
   --card-foreground: #fafafa;
-  --primary: #7c3aed;
+  --primary: #6366f1;
   --primary-foreground: #fafafa;
   --muted: #27272a;
   --muted-foreground: #a1a1aa;
   --border: #27272a;
-  --ring: #7c3aed;
+  --ring: #6366f1;
 }
 
 @theme inline {
@@ -93,4 +93,19 @@ body {
 }
 .stagger-4 {
   animation-delay: 0.2s;
+}
+
+/* Prevent LaTeX equations from breaking the layout */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+}
+.katex-display::-webkit-scrollbar {
+  height: 6px;
+}
+.katex-display::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 4px;
 }

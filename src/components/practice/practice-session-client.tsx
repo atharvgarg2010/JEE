@@ -266,6 +266,39 @@ export function PracticeSessionClient() {
     await loadQuestions();
   }
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !showResult && selectedAnswer.trim() && !submitting) {
+          e.preventDefault();
+          handleSubmit();
+        }
+        return;
+      }
+
+      if (!current) return;
+
+      if (e.key === "ArrowRight") {
+        if (qIndex < questions.length - 1) setQuery({ q: String(qIndex + 1) });
+      } else if (e.key === "ArrowLeft") {
+        if (qIndex > 0) setQuery({ q: String(qIndex - 1) });
+      } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        if (!showResult && selectedAnswer.trim() && !submitting) {
+          e.preventDefault();
+          handleSubmit();
+        }
+      } else if (current.question_type === "mcq" && !showResult && current.options) {
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= current.options.length) {
+          setSelectedAnswer(current.options[num - 1].id);
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [current, qIndex, questions.length, selectedAnswer, showResult, submitting]);
+
   const showResult = submitted && isCorrect !== null && !reattempting;
   const status = current?.status ?? progress?.status ?? "NOT_STARTED";
 
@@ -333,7 +366,7 @@ export function PracticeSessionClient() {
       {current && (
         <div className="animate-fade-in-up grid gap-6 lg:grid-cols-[1fr_300px]">
           <div className="space-y-6">
-            <article className="rounded-2xl border border-zinc-800/60 bg-gradient-to-b from-zinc-900/60 to-zinc-950/80 p-6 sm:p-8 shadow-xl shadow-black/20">
+            <article className="rounded-md border border-zinc-800 bg-zinc-900 p-6 sm:p-8">
               <div className="mb-5 flex flex-wrap items-center gap-2">
                 <Badge>{current.question_type.toUpperCase()}</Badge>
                 {current.difficulty && (
@@ -358,7 +391,7 @@ export function PracticeSessionClient() {
                 )}
               </div>
 
-              <div className="prose prose-invert text-lg leading-relaxed">
+              <div className="prose prose-invert max-w-none text-lg leading-relaxed overflow-x-auto">
                 <QuestionMarkdown content={current.question_text} />
               </div>
 
@@ -374,10 +407,10 @@ export function PracticeSessionClient() {
                       <label
                         key={opt.id}
                         className={cn(
-                          "flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 transition-all duration-200",
+                          "flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 transition-colors",
                           selected
-                            ? "border-violet-500/60 bg-violet-500/15 shadow-md shadow-violet-900/20"
-                            : "border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-600",
+                            ? "border-indigo-500 bg-indigo-500/10"
+                            : "border-zinc-800 bg-zinc-950 hover:bg-zinc-800/50",
                           showResult && "pointer-events-none",
                           showCorrect && "border-red-500/40 bg-red-950/30",
                         )}
@@ -388,12 +421,14 @@ export function PracticeSessionClient() {
                           checked={selected}
                           onChange={() => setSelectedAnswer(opt.id)}
                           disabled={showResult}
-                          className="accent-violet-500 h-4 w-4"
+                          className="accent-indigo-500 h-4 w-4"
                         />
-                        <span className="font-semibold text-zinc-500 w-6">
+                        <span className="font-semibold text-zinc-500 w-6 shrink-0">
                           {String.fromCharCode(65 + i)}.
                         </span>
-                        <QuestionMarkdown content={opt.text} className="prose prose-invert m-0 text-zinc-200" />
+                        <div className="overflow-x-auto w-full">
+                          <QuestionMarkdown content={opt.text} className="prose prose-invert max-w-none m-0 text-zinc-200" />
+                        </div>
                       </label>
                     );
                   })
@@ -426,10 +461,10 @@ export function PracticeSessionClient() {
             )}
 
             {solution && !reattempting && (
-              <Alert className="animate-fade-in border-violet-500/30 bg-violet-950/20">
-                <BookOpen className="h-4 w-4 text-violet-400" />
+              <Alert className="animate-fade-in border-indigo-500/30 bg-indigo-500/10 rounded-md">
+                <BookOpen className="h-4 w-4 text-indigo-400" />
                 <AlertDescription>
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wider text-violet-400">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wider text-indigo-400">
                     Solution
                     {solutionViewCount > 0 && (
                       <span className="ml-2 normal-case text-zinc-500">
@@ -448,8 +483,8 @@ export function PracticeSessionClient() {
             <AttemptHistoryPanel history={history} />
           </div>
 
-          <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-4 space-y-2 shadow-lg">
+          <aside className="space-y-3 lg:sticky lg:top-6 lg:self-start">
+            <div className="rounded-md border border-zinc-800 bg-zinc-900 p-4 space-y-2">
               <p className="text-xs text-zinc-500">
                 Question {qIndex + 1} of {questions.length}
               </p>

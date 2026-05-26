@@ -25,34 +25,25 @@ export default async function TeacherDashboardPage() {
 
   return (
     <div className="space-y-10">
-      <div className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-linear-to-br from-violet-950/50 via-zinc-900/80 to-zinc-950 p-8 sm:p-10">
-        <div
-          className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-violet-600/20 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative">
-          <p className="mb-2 flex items-center gap-2 text-sm text-violet-300">
-            <Sparkles className="h-4 w-4" />
+      <div className="rounded-md border border-zinc-800 bg-zinc-900 p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-100">
             Teacher Command Center
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Welcome back, {user?.full_name?.split(" ")[0] ?? user?.username}
           </h1>
-          <p className="mt-3 max-w-xl text-zinc-400">
-            Create JEE-aligned questions, organize by chapter and category, and
-            build your institute&apos;s question bank.
+          <p className="mt-1 text-sm text-zinc-400">
+            Welcome back, {user?.full_name?.split(" ")[0] ?? user?.username}.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Button size="lg" asChild>
-              <Link href="/teacher/questions/new">
-                <Plus className="h-4 w-4" />
-                New question
-              </Link>
-            </Button>
-            <Button size="lg" variant="secondary" asChild>
-              <Link href="/teacher/questions">View question bank</Link>
-            </Button>
-          </div>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="secondary" asChild>
+            <Link href="/teacher/questions">View question bank</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/teacher/questions/new">
+              <Plus className="h-4 w-4" />
+              New question
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -85,13 +76,15 @@ export default async function TeacherDashboardPage() {
         ].map(({ label, value, icon: Icon, accent }) => (
           <div
             key={label}
-            className="rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-5 backdrop-blur-sm"
+            className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900 p-4"
           >
-            <Icon className={`mb-3 h-5 w-5 ${accent}`} />
-            <p className="text-xs uppercase tracking-wider text-zinc-500">
-              {label}
-            </p>
-            <p className="mt-1 text-3xl font-bold text-white">{value}</p>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-zinc-500">
+                {label}
+              </p>
+              <p className="mt-1 text-2xl font-bold text-zinc-100">{value}</p>
+            </div>
+            <Icon className="h-6 w-6 text-indigo-400 opacity-80" />
           </div>
         ))}
       </div>
@@ -118,7 +111,7 @@ export default async function TeacherDashboardPage() {
           {(stats?.by_category ?? []).map((cat) => (
             <div
               key={cat.name}
-              className="flex items-center justify-between rounded-xl border border-zinc-800/60 bg-zinc-900/40 px-4 py-3"
+              className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900 p-4"
             >
               <span className="text-sm text-zinc-300">{cat.name}</span>
               <span className="rounded-lg bg-violet-500/15 px-2.5 py-1 text-sm font-semibold text-violet-300">
@@ -150,7 +143,7 @@ export default async function TeacherDashboardPage() {
           <Link
             key={card.title}
             href={card.href}
-            className="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-5 transition-colors hover:border-violet-500/40"
+            className="rounded-md border border-zinc-800 bg-zinc-900 p-5 transition-colors hover:bg-zinc-800/50"
           >
             <h3 className="font-semibold text-white">{card.title}</h3>
             <p className="mt-2 text-sm text-zinc-500">{card.desc}</p>

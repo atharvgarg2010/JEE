@@ -16,7 +16,7 @@ export function Skeleton({ className, circle, ...props }: SkeletonProps) {
         "animate-pulse",
         "before:pointer-events-none before:absolute before:inset-0",
         "before:-translate-x-full before:animate-[shimmer_1.8s_ease-in-out_infinite]",
-        "before:bg-gradient-to-r before:from-transparent before:via-violet-500/12 before:to-fuchsia-500/8",
+        "before:bg-gradient-to-r before:from-transparent before:via-zinc-600/10 before:to-transparent",
         className,
       )}
       {...props}

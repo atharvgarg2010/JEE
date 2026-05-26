@@ -27,11 +27,17 @@ interface QuestionMarkdownProps {
  * The conversion runs on the raw string BEFORE the Markdown parser sees it.
  */
 function preprocessMath(raw: string): string {
-  // \[ ... \]  →  $$ ... $$ (block math)
-  let result = raw.replace(/\\\[/g, "$$").replace(/\\\]/g, "$$");
+  if (!raw) return "";
+  let result = raw;
 
-  // \( ... \)  →  $ ... $ (inline math)
-  result = result.replace(/\\\(/g, "$").replace(/\\\)/g, "$");
+  // 1. \[ ... \]  →  $$ ... $$ (block math) with proper newlines
+  result = result.replace(/\\\[([\s\S]*?)\\\]/g, "\n$$\n$1\n$$\n");
+
+  // 2. \( ... \)  →  $ ... $ (inline math)
+  result = result.replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => `$${math}$`);
+
+  // 3. \begin{...} ... \end{...} → wrap in $$ if not already
+  result = result.replace(/(?<!\$)\s*(\\begin\{[^}]+\}[\s\S]*?\\end\{[^}]+\})\s*(?!\$)/g, "\n$$\n$1\n$$\n");
 
   return result;
 }
@@ -120,7 +126,7 @@ export function QuestionMarkdown({ content, className }: QuestionMarkdownProps) 
         // remark-math MUST come before remark-gfm so it claims $...$ blocks
         // before GFM's backslash-escape processor can strip backslashes.
         remarkPlugins={[remarkMath, remarkGfm]}
-        rehypePlugins={[rehypeKatex]}
+        rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
         components={markdownComponents}
       >
         {processed}

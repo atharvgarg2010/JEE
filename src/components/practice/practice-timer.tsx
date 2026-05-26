@@ -19,14 +19,16 @@ export function PracticeTimer({ running, resetKey, onTick }: PracticeTimerProps)
   useEffect(() => {
     if (!running) return;
     const id = setInterval(() => {
-      setSeconds((s) => {
-        const next = s + 1;
-        onTick?.(next);
-        return next;
-      });
+      setSeconds((s) => s + 1);
     }, 1000);
     return () => clearInterval(id);
-  }, [running, onTick]);
+  }, [running]);
+
+  useEffect(() => {
+    if (seconds > 0) {
+      onTick?.(seconds);
+    }
+  }, [seconds, onTick]);
 
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;

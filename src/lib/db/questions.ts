@@ -174,7 +174,17 @@ export async function getQuestionById(
 ): Promise<QuestionWithRelations | null> {
   const { rows } = await getPool().query(
     `SELECT ${LIST_SELECT} ${LIST_FROM}
-     WHERE q.id = $1 AND q.teacher_id = $2`,
+     WHERE q.id = $1 AND (
+       q.teacher_id = $2 OR
+       EXISTS (
+         SELECT 1 FROM batch_teachers bt
+         WHERE bt.teacher_id = $2 AND bt.subject_id = q.subject_id
+       ) OR
+       EXISTS (
+         SELECT 1 FROM teacher_notifications tn
+         WHERE tn.teacher_id = $2 AND tn.question_id = q.id
+       )
+     )`,
     [id, teacherId],
   );
   return rows[0] ? mapQuestionWithRelations(rows[0]) : null;

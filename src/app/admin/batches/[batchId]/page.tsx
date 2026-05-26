@@ -28,6 +28,13 @@ interface TeacherOption {
   subject: string | null;
 }
 
+interface StudentOption {
+  id: string;
+  full_name: string | null;
+  username: string;
+  roll_number: string | null;
+}
+
 export default function AdminBatchDetailPage() {
   const { batchId } = useParams<{ batchId: string }>();
 
@@ -41,8 +48,12 @@ export default function AdminBatchDetailPage() {
   const [subjectMap, setSubjectMap] = useState<Record<string, string>>({});
   // All teachers (for assignment dropdown)
   const [allTeachers, setAllTeachers] = useState<TeacherOption[]>([]);
+  // All students (for assignment dropdown)
+  const [allStudents, setAllStudents] = useState<StudentOption[]>([]);
 
   const [assigning, setAssigning] = useState<string | null>(null); // subjectSlug being assigned
+  const [selectedStudent, setSelectedStudent] = useState<string>("");
+  const [assigningStudent, setAssigningStudent] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Record<string, string>>({});
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
@@ -58,12 +69,7 @@ export default function AdminBatchDetailPage() {
       setStudents(studentsRes.students ?? []);
       setTotalStudents(studentsRes.total ?? 0);
 
-      // Build subject map from teachers data
-      const map: Record<string, string> = {};
-      for (const t of batchRes.teachers ?? []) {
-        map[t.subject_slug] = t.subject_id;
-      }
-      setSubjectMap(map);
+      // Removed overwriting of subjectMap so it maintains all subject IDs loaded from /api/student/subjects
     } catch (err) {
       console.error(err);
     } finally {
@@ -77,6 +83,12 @@ export default function AdminBatchDetailPage() {
     fetch("/api/admin/users?role=teacher")
       .then((r) => r.json())
       .then((d) => setAllTeachers(d.users ?? []))
+      .catch(console.error);
+
+    // Load all students for assignment dropdown
+    fetch("/api/admin/users?role=student")
+      .then((r) => r.json())
+      .then((d) => setAllStudents(d.users ?? []))
       .catch(console.error);
 
     // Load subjects to get IDs
@@ -135,6 +147,29 @@ export default function AdminBatchDetailPage() {
         await loadBatch();
       }
     } finally {
+      setTimeout(() => setStatusMsg(null), 3000);
+    }
+  }
+
+  async function handleAssignStudent() {
+    if (!selectedStudent) return;
+    setAssigningStudent(true);
+    try {
+      const res = await fetch(`/api/admin/batches/${batchId}/students`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: selectedStudent }),
+      });
+      if (res.ok) {
+        setStatusMsg("Student assigned successfully");
+        setSelectedStudent("");
+        await loadBatch();
+      } else {
+        const d = await res.json();
+        setStatusMsg(d.error ?? "Failed to assign student");
+      }
+    } finally {
+      setAssigningStudent(false);
       setTimeout(() => setStatusMsg(null), 3000);
     }
   }
@@ -306,10 +341,32 @@ export default function AdminBatchDetailPage() {
 
       {/* Students */}
       <div>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between flex-wrap gap-4">
           <h2 className="text-lg font-semibold text-white">
             Students <span className="ml-2 text-sm font-normal text-zinc-500">({totalStudents})</span>
           </h2>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <select
+              value={selectedStudent}
+              onChange={(e) => setSelectedStudent(e.target.value)}
+              className="flex-1 sm:w-64 rounded-lg border border-zinc-700 bg-zinc-800 py-2 px-3 text-sm text-zinc-200 focus:border-violet-500 focus:outline-none"
+            >
+              <option value="">Select student to assign…</option>
+              {allStudents.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.full_name ?? s.username} {s.roll_number ? `(${s.roll_number})` : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleAssignStudent}
+              disabled={!selectedStudent || assigningStudent}
+              className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 hover:bg-violet-500 transition-colors"
+            >
+              <UserPlus className="h-4 w-4" />
+              {assigningStudent ? "Assigning…" : "Assign"}
+            </button>
+          </div>
         </div>
 
         {students.length === 0 ? (

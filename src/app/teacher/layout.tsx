@@ -22,6 +22,9 @@ export default async function TeacherLayout({
         { href: "/teacher/dashboard", label: "Dashboard" },
         { href: "/teacher/questions", label: "Questions" },
         { href: "/teacher/questions/new", label: "Create" },
+        { href: "/teacher/batches", label: "My Batches" },
+        { href: "/teacher/students", label: "Students" },
+        { href: "/teacher/announcements", label: "Announce" },
       ]}
       extraActions={<TeacherNotificationsDrawer />}
     >

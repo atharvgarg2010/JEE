@@ -1,5 +1,6 @@
 import { getPool } from "@/lib/db/postgres";
 import type { PublicUser, User, UserRole } from "@/types/user";
+import { enrollStudentInBatch } from "./batches";
 
 export interface CreateStudentInput {
   full_name: string;
@@ -142,7 +143,18 @@ export async function createStudent(
       input.password_hash,
     ],
   );
-  return mapUser(rows[0]);
+
+  const student = mapUser(rows[0]);
+
+  if (input.batch_code && input.batch_code.trim()) {
+    try {
+      await enrollStudentInBatch(student.id, input.batch_code);
+    } catch (err) {
+      console.error(`[createStudent] failed to auto-enroll student ${student.id} in batch ${input.batch_code}:`, err);
+    }
+  }
+
+  return student;
 }
 
 export async function createTeacher(

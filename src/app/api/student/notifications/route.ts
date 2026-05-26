@@ -1,8 +1,8 @@
 import { isStudentUser, requireStudent } from "@/lib/auth/student";
 import { jsonError, jsonSuccess, zodErrorMessage } from "@/lib/api/response";
-import { getPool } from "@/lib/db/postgres";
 import { createTeacherNotification } from "@/lib/db/teacher-notifications";
 import { notifyTeacherSchema } from "@/lib/validations/attempt";
+import { routeDoubtToTeacher } from "@/lib/db/batches";
 
 export const dynamic = "force-dynamic";
 
@@ -17,24 +17,22 @@ export async function POST(request: Request) {
       return jsonError(zodErrorMessage(parsed.error), 400);
     }
 
-    const { rows } = await getPool().query(
-      `SELECT q.teacher_id, c.name AS chapter_name
-       FROM questions q
-       JOIN chapters c ON c.id = q.chapter_id
-       WHERE q.id = $1`,
-      [parsed.data.questionId],
-    );
-
-    if (!rows[0]?.teacher_id) {
-      return jsonError("Question not found", 404);
+    let routeResult;
+    try {
+      routeResult = await routeDoubtToTeacher(user.id, parsed.data.questionId);
+    } catch (err) {
+      return jsonError((err as Error).message || "Question not found", 404);
     }
+
+    const { teacherId, chapterName, batchId } = routeResult;
 
     const notification = await createTeacherNotification({
       student_id: user.id,
-      teacher_id: rows[0].teacher_id as string,
+      teacher_id: teacherId,
       question_id: parsed.data.questionId,
       message: parsed.data.message,
-      chapter_name: rows[0].chapter_name as string,
+      chapter_name: chapterName,
+      batch_id: batchId ?? undefined,
     });
 
     return jsonSuccess({ notification });
@@ -43,3 +41,4 @@ export async function POST(request: Request) {
     return jsonError("Failed to send notification", 500);
   }
 }
+

@@ -7,11 +7,12 @@ export async function createTeacherNotification(input: {
   question_id: string;
   message: string;
   chapter_name?: string;
+  batch_id?: string;
 }): Promise<TeacherNotification> {
   const { rows } = await getPool().query(
     `INSERT INTO teacher_notifications (
-      student_id, teacher_id, question_id, message, chapter_name
-    ) VALUES ($1,$2,$3,$4,$5)
+      student_id, teacher_id, question_id, message, chapter_name, batch_id
+    ) VALUES ($1,$2,$3,$4,$5,$6)
     RETURNING *`,
     [
       input.student_id,
@@ -19,6 +20,7 @@ export async function createTeacherNotification(input: {
       input.question_id,
       input.message,
       input.chapter_name ?? null,
+      input.batch_id ?? null,
     ],
   );
 

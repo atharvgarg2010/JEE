@@ -290,11 +290,11 @@ export async function getChapterAnalytics(
     categories.map((c) => [c.slug as string, c]),
   );
 
-  const module: CategoryBucketStats[] = [];
+  const moduleStats: CategoryBucketStats[] = [];
   for (const slug of MODULE_CATEGORY_SLUGS) {
     const cat = catBySlug[slug];
     if (!cat) continue;
-    module.push(
+    moduleStats.push(
       await bucketStats(
         studentId,
         subjectId,
@@ -335,7 +335,7 @@ export async function getChapterAnalytics(
     chapter_name: chRows[0].name as string,
     subject_id: subjectId,
     subject_name: chRows[0].subject_name as string,
-    module,
+    module: moduleStats,
     created_by_teacher,
   };
 }

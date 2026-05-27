@@ -266,6 +266,8 @@ export function PracticeSessionClient() {
     await loadQuestions();
   }
 
+  const showResult = submitted && isCorrect !== null && !reattempting;
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -298,8 +300,6 @@ export function PracticeSessionClient() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [current, qIndex, questions.length, selectedAnswer, showResult, submitting]);
-
-  const showResult = submitted && isCorrect !== null && !reattempting;
   const status = current?.status ?? progress?.status ?? "NOT_STARTED";
 
   if (!subjectId || !chapterId) {

@@ -24,34 +24,39 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySessionToken(token) : null;
 
+  let response = NextResponse.next();
+
   for (const { prefix, roles } of PROTECTED) {
     if (pathname.startsWith(prefix)) {
       if (!session) {
-        return NextResponse.redirect(loginUrlForPrefix(prefix.slice(1), request));
+        response = NextResponse.redirect(loginUrlForPrefix(prefix.slice(1), request));
+        break;
       }
       if (!roles.includes(session.role)) {
         const home = ROLE_HOME[session.role] ?? "/";
-        return NextResponse.redirect(new URL(home, request.url));
+        response = NextResponse.redirect(new URL(home, request.url));
+        break;
       }
-      return NextResponse.next();
+      break;
     }
   }
 
   if (session && AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p))) {
     const home = ROLE_HOME[session.role] ?? "/";
-    return NextResponse.redirect(new URL(home, request.url));
+    response = NextResponse.redirect(new URL(home, request.url));
   }
 
-  return NextResponse.next();
+  // Add security headers to all responses
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+
+  return response;
 }
 
 export const config = {
+  // Apply to all API routes and page routes, exclude static files, _next, etc.
   matcher: [
-    "/student/:path*",
-    "/teacher/:path*",
-    "/admin/:path*",
-    "/signup",
-    "/signup/:path*",
-    "/login/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

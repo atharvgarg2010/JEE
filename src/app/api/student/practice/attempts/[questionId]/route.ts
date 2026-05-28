@@ -1,5 +1,5 @@
 import { isStudentUser, requireStudent } from "@/lib/auth/student";
-import { jsonError, jsonSuccess, zodErrorMessage } from "@/lib/api/response";
+import { jsonSuccess } from "@/lib/api/response";
 import {
   getAttemptHistory,
   getLatestAttempt,
@@ -14,80 +14,88 @@ import {
 } from "@/lib/db/student-practice";
 import { updateAttemptSchema } from "@/lib/validations/attempt";
 import type { SolutionViewContext } from "@/lib/constants/questions";
+import { withApiErrorHandler, ValidationError } from "@/lib/api/error";
+import { parseRequestBody } from "@/lib/api/validation";
+import { verifyCsrf } from "@/lib/api/csrf";
+import { rateLimit } from "@/lib/api/rate-limit";
+import { withTimeout } from "@/lib/api/timeout";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
+const schema = z.object({
+  doubtMarked: z.boolean().optional().nullable(),
+  doubtResolved: z.boolean().optional().nullable(),
+  savedForRevision: z.boolean().optional().nullable(),
+  prepareReattempt: z.boolean().optional().nullable(),
+  viewSolution: z.boolean().optional().nullable(),
+}).and(updateAttemptSchema);
+
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ questionId: string }> },
 ) {
-  const user = await requireStudent();
-  if (!isStudentUser(user)) return user;
+  return withApiErrorHandler(async (req) => {
+    const user = await requireStudent();
+    if (!isStudentUser(user)) return user;
 
-  try {
     const { questionId } = await params;
     const [question, progress, history, views] = await Promise.all([
-      getStudentQuestion(user.id, questionId, false),
-      getProgress(user.id, questionId),
-      getAttemptHistory(user.id, questionId),
-      getSolutionViews(user.id, questionId),
+      withTimeout(getStudentQuestion(user.id, questionId, false)),
+      withTimeout(getProgress(user.id, questionId)),
+      withTimeout(getAttemptHistory(user.id, questionId)),
+      withTimeout(getSolutionViews(user.id, questionId)),
     ]);
 
-    if (!question) return jsonError("Question not found", 404);
+    if (!question) throw new ValidationError("Question not found");
 
     return jsonSuccess({ question, progress, history, solutionViews: views });
-  } catch (error) {
-    console.error("[attempts GET]", error);
-    return jsonError("Failed to load attempt data", 500);
-  }
+  }, request);
 }
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ questionId: string }> },
 ) {
-  const user = await requireStudent();
-  if (!isStudentUser(user)) return user;
+  return withApiErrorHandler(async (req) => {
+    verifyCsrf(req);
+    rateLimit(req, { limit: 30, windowMs: 60 * 1000, identifier: `student_practice_attempt_patch:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
-  try {
+    const user = await requireStudent();
+    if (!isStudentUser(user)) return user;
+
     const { questionId } = await params;
-    const body = await request.json();
-    const parsed = updateAttemptSchema.safeParse(body);
+    const data = await parseRequestBody(req, schema);
 
-    if (!parsed.success) {
-      return jsonError(zodErrorMessage(parsed.error), 400);
-    }
-
-    const data = parsed.data;
     let solution: string | null = null;
     let viewCount = 0;
 
     if (data.viewSolution) {
-      const latest = await getLatestAttempt(user.id, questionId);
-      const hasAttempts = (await getProgress(user.id, questionId))?.total_attempts ?? 0;
+      const latest = await withTimeout(getLatestAttempt(user.id, questionId));
+      const hasAttempts = (await withTimeout(getProgress(user.id, questionId)))?.total_attempts ?? 0;
       let context: SolutionViewContext = "while_reviewing";
       if (hasAttempts === 0) context = "before_solve";
       else if (latest && !latest.is_correct) context = "after_wrong";
       else if (latest?.is_correct) context = "after_correct";
 
-      const result = await recordSolutionView(
+      const result = await withTimeout(recordSolutionView(
         user.id,
         questionId,
         context,
         latest?.attempt_number,
-      );
+      ));
       viewCount = result.viewCount;
-      solution = await fetchSolutionText(questionId);
+      solution = await withTimeout(fetchSolutionText(questionId));
     }
 
-    const progress = await updateProgressFlags(user.id, questionId, {
+    const progress = await withTimeout(updateProgressFlags(user.id, questionId, {
       doubt_marked: data.doubtMarked,
       doubt_resolved: data.doubtResolved,
       saved_for_revision: data.savedForRevision,
       status: data.prepareReattempt ? "REATTEMPT" : undefined,
-    });
+    }));
 
-    const history = await getAttemptHistory(user.id, questionId);
+    const history = await withTimeout(getAttemptHistory(user.id, questionId));
 
     return jsonSuccess({
       progress,
@@ -95,8 +103,5 @@ export async function PATCH(
       solution,
       solutionViewCount: viewCount,
     });
-  } catch (error) {
-    console.error("[attempts PATCH]", error);
-    return jsonError("Failed to update attempt", 500);
-  }
+  }, request);
 }

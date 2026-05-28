@@ -1,6 +1,6 @@
 import { hashPassword } from "@/lib/auth/password";
 import { setSessionCookie, getRedirectPathForRole } from "@/lib/auth/session";
-import { jsonError, jsonSuccess, zodErrorMessage } from "@/lib/api/response";
+import { jsonSuccess, jsonError } from "@/lib/api/response";
 import {
   createStudent,
   rollNumberExists,
@@ -8,24 +8,29 @@ import {
   usernameExists,
 } from "@/lib/db/users";
 import { studentSignupSchema } from "@/lib/validations/auth";
+import { withApiErrorHandler, RateLimitError } from "@/lib/api/error";
+import { rateLimit } from "@/lib/api/rate-limit";
+import { verifyCsrf } from "@/lib/api/csrf";
+import { parseRequestBody } from "@/lib/api/validation";
+import { z } from "zod";
+
+const schema = z.object({
+  fullName: z.string(),
+  username: z.string().transform(val => val.toLowerCase()),
+  rollNumber: z.string(),
+  batchCode: z.string(),
+  password: z.string(),
+  confirmPassword: z.string(),
+}).and(studentSignupSchema);
 
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const parsed = studentSignupSchema.safeParse({
-      fullName: body.fullName,
-      username: body.username?.toLowerCase?.() ?? body.username,
-      rollNumber: body.rollNumber,
-      batchCode: body.batchCode,
-      password: body.password,
-      confirmPassword: body.confirmPassword,
-    });
+  return withApiErrorHandler(async (req) => {
+    verifyCsrf(req);
+    // Strict rate limit for signups: 3 per hour
+    rateLimit(req, { limit: 3, windowMs: 60 * 60 * 1000, identifier: `signup_student:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
-    if (!parsed.success) {
-      return jsonError(zodErrorMessage(parsed.error), 400);
-    }
-
-    const { fullName, username, rollNumber, batchCode, password } = parsed.data;
+    const data = await parseRequestBody(req, schema);
+    const { fullName, username, rollNumber, batchCode, password } = data;
 
     if (await usernameExists(username)) {
       return jsonError("Username is already taken", 409);
@@ -53,9 +58,6 @@ export async function POST(request: Request) {
     return jsonSuccess({
       user: toPublicUser(user),
       redirectTo: getRedirectPathForRole(user.role),
-    });
-  } catch (error) {
-    console.error("[signup]", error);
-    return jsonError("Unable to create account. Please try again.", 500);
-  }
+    }, 201);
+  }, request);
 }

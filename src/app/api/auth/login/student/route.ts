@@ -1,31 +1,36 @@
 import { verifyPassword } from "@/lib/auth/password";
 import { setSessionCookie, getRedirectPathForRole } from "@/lib/auth/session";
-import { jsonError, jsonSuccess, zodErrorMessage } from "@/lib/api/response";
+import { jsonError, jsonSuccess } from "@/lib/api/response";
 import { findUserByIdentifier, toPublicUser } from "@/lib/db/users";
 import { studentLoginSchema } from "@/lib/validations/auth";
+import { withApiErrorHandler, UnauthorizedError } from "@/lib/api/error";
+import { rateLimit, logSuspiciousFailedLogin } from "@/lib/api/rate-limit";
+import { verifyCsrf } from "@/lib/api/csrf";
+import { parseRequestBody } from "@/lib/api/validation";
 
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const parsed = studentLoginSchema.safeParse({
-      identifier: body.identifier,
-      password: body.password,
-    });
+  return withApiErrorHandler(async (req) => {
+    verifyCsrf(req);
+    // Strict rate limit for logins: 5 requests per 5 minutes
+    rateLimit(req, { limit: 5, windowMs: 5 * 60 * 1000, identifier: `login_student:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
-    if (!parsed.success) {
-      return jsonError(zodErrorMessage(parsed.error), 400);
-    }
+    const data = await parseRequestBody(req, studentLoginSchema);
+    
+    // Convert generic identifier to roll_number / username search format
+    const identifier = data.identifier;
+    const password = data.password;
 
-    const { identifier, password } = parsed.data;
     const user = await findUserByIdentifier(identifier);
 
     if (!user || user.role !== "student") {
-      return jsonError("Invalid username/roll number or password", 401);
+      logSuspiciousFailedLogin(`student:${identifier}`);
+      throw new UnauthorizedError("Invalid username/roll number or password");
     }
 
     const valid = await verifyPassword(password, user.password_hash);
     if (!valid) {
-      return jsonError("Invalid username/roll number or password", 401);
+      logSuspiciousFailedLogin(`student:${identifier}`);
+      throw new UnauthorizedError("Invalid username/roll number or password");
     }
 
     const publicUser = toPublicUser(user);
@@ -40,8 +45,5 @@ export async function POST(request: Request) {
       user: publicUser,
       redirectTo: getRedirectPathForRole(user.role),
     });
-  } catch (error) {
-    console.error("[student-login]", error);
-    return jsonError("Login failed. Please try again.", 500);
-  }
+  }, request);
 }

@@ -1,48 +1,45 @@
 import { isStudentUser, requireStudent } from "@/lib/auth/student";
-import { jsonError, jsonSuccess, zodErrorMessage } from "@/lib/api/response";
+import { jsonSuccess } from "@/lib/api/response";
 import { createOrGetModuleDoubtNotification } from "@/lib/db/modules";
 import { z } from "zod";
+import { withApiErrorHandler, ValidationError } from "@/lib/api/error";
+import { parseRequestBody } from "@/lib/api/validation";
+import { verifyCsrf } from "@/lib/api/csrf";
+import { rateLimit } from "@/lib/api/rate-limit";
+import { assertStudentOwnsModuleLog } from "@/lib/auth/guards";
+import { withTimeout } from "@/lib/api/timeout";
 
 export const dynamic = "force-dynamic";
 
 const notifySchema = z.object({
   question_number: z.number().int().min(1),
   status: z.enum(["doubt", "revision"]),
-});
+}).strict();
 
-/**
- * POST /api/student/modules/[moduleSetId]/notify
- * Creates a doubt/revision notification for the teacher.
- * DEDUP: If an unresolved notification already exists for the same
- * (student, module, question), returns the existing one without creating a duplicate.
- * NOT automatic — must be triggered explicitly by the student.
- */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ moduleSetId: string }> },
 ) {
-  const user = await requireStudent();
-  if (!isStudentUser(user)) return user;
+  return withApiErrorHandler(async (req) => {
+    verifyCsrf(req);
+    rateLimit(req, { limit: 10, windowMs: 60 * 1000, identifier: `student_module_notify:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
-  try {
+    const user = await requireStudent();
+    if (!isStudentUser(user)) return user;
+
     const { moduleSetId } = await params;
-    const body = await request.json();
-    const parsed = notifySchema.safeParse(body);
-    if (!parsed.success) {
-      return jsonError(zodErrorMessage(parsed.error), 400);
-    }
+    await assertStudentOwnsModuleLog(user.id, moduleSetId);
 
-    const { notification, created } = await createOrGetModuleDoubtNotification({
+    const data = await parseRequestBody(req, notifySchema);
+
+    const { notification, created } = await withTimeout(createOrGetModuleDoubtNotification({
       student_id: user.id,
       module_set_id: moduleSetId,
-      question_number: parsed.data.question_number,
-      status: parsed.data.status,
-    });
+      question_number: data.question_number,
+      status: data.status,
+    }));
 
     const status = created ? 201 : 200;
     return jsonSuccess({ notification, created }, status);
-  } catch (error) {
-    console.error("[student/modules/notify POST]", error);
-    return jsonError("Failed to send notification", 500);
-  }
+  }, request);
 }

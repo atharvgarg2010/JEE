@@ -1,35 +1,31 @@
 import { isTeacherUser, requireTeacher } from "@/lib/auth/teacher";
-import { jsonError, jsonSuccess } from "@/lib/api/response";
+import { jsonSuccess } from "@/lib/api/response";
 import { resolveModuleDoubtNotification } from "@/lib/db/modules";
+import { withApiErrorHandler, ValidationError } from "@/lib/api/error";
+import { verifyCsrf } from "@/lib/api/csrf";
+import { rateLimit } from "@/lib/api/rate-limit";
+import { withTimeout } from "@/lib/api/timeout";
 
 export const dynamic = "force-dynamic";
 
-/**
- * PATCH /api/teacher/module-doubts/[notifId]
- * Marks a doubt notification as resolved.
- * Verifies the teacher has access (is in a shared batch with the student).
- */
 export async function PATCH(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ notifId: string }> },
 ) {
-  const user = await requireTeacher();
-  if (!isTeacherUser(user)) return user;
+  return withApiErrorHandler(async (req) => {
+    verifyCsrf(req);
+    rateLimit(req, { limit: 30, windowMs: 60 * 1000, identifier: `teacher_module_doubts:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
-  try {
+    const user = await requireTeacher();
+    if (!isTeacherUser(user)) return user;
+
     const { notifId } = await params;
-    const success = await resolveModuleDoubtNotification(notifId, user.id);
+    const success = await withTimeout(resolveModuleDoubtNotification(notifId, user.id));
 
     if (!success) {
-      return jsonError(
-        "Notification not found or you do not have access",
-        404,
-      );
+      throw new ValidationError("Notification not found or you do not have access");
     }
 
     return jsonSuccess({ resolved: true });
-  } catch (error) {
-    console.error("[teacher/module-doubts PATCH]", error);
-    return jsonError("Failed to resolve notification", 500);
-  }
+  }, request);
 }

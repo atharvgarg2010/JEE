@@ -1,53 +1,54 @@
 import { isStudentUser, requireStudent } from "@/lib/auth/student";
-import { jsonError, jsonSuccess, zodErrorMessage } from "@/lib/api/response";
+import { jsonSuccess } from "@/lib/api/response";
 import { getDoubtQuestions } from "@/lib/db/student-dashboard";
 import { updateProgressFlags } from "@/lib/db/question-attempts";
 import { z } from "zod";
+import { withApiErrorHandler, ValidationError } from "@/lib/api/error";
+import { parseRequestBody } from "@/lib/api/validation";
+import { verifyCsrf } from "@/lib/api/csrf";
+import { rateLimit } from "@/lib/api/rate-limit";
+import { assertStudentOwnsDoubt } from "@/lib/auth/guards";
+import { withTimeout } from "@/lib/api/timeout";
 
 export const dynamic = "force-dynamic";
 
 const patchSchema = z.object({
   questionId: z.string().uuid(),
   doubtResolved: z.boolean(),
-});
+}).strict();
 
 export async function GET(request: Request) {
-  const user = await requireStudent();
-  if (!isStudentUser(user)) return user;
+  return withApiErrorHandler(async (req) => {
+    const user = await requireStudent();
+    if (!isStudentUser(user)) return user;
 
-  try {
-    const resolved = new URL(request.url).searchParams.get("resolved");
+    const resolved = new URL(req.url).searchParams.get("resolved");
     const resolvedFilter =
       resolved === "true" ? true : resolved === "false" ? false : undefined;
 
-    const questions = await getDoubtQuestions(user.id, resolvedFilter);
+    const questions = await withTimeout(getDoubtQuestions(user.id, resolvedFilter));
     return jsonSuccess({ questions, total: questions.length });
-  } catch (error) {
-    console.error("[student/doubts GET]", error);
-    return jsonError("Failed to load doubts", 500);
-  }
+  }, request);
 }
 
 export async function PATCH(request: Request) {
-  const user = await requireStudent();
-  if (!isStudentUser(user)) return user;
+  return withApiErrorHandler(async (req) => {
+    verifyCsrf(req);
+    rateLimit(req, { limit: 30, windowMs: 60 * 1000, identifier: `student_doubts:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
-  try {
-    const body = await request.json();
-    const parsed = patchSchema.safeParse(body);
-    if (!parsed.success) {
-      return jsonError(zodErrorMessage(parsed.error), 400);
-    }
+    const user = await requireStudent();
+    if (!isStudentUser(user)) return user;
 
-    const progress = await updateProgressFlags(
+    const data = await parseRequestBody(req, patchSchema);
+    
+    await assertStudentOwnsDoubt(user.id, data.questionId);
+
+    const progress = await withTimeout(updateProgressFlags(
       user.id,
-      parsed.data.questionId,
-      { doubt_resolved: parsed.data.doubtResolved },
-    );
+      data.questionId,
+      { doubt_resolved: data.doubtResolved },
+    ));
 
     return jsonSuccess({ progress });
-  } catch (error) {
-    console.error("[student/doubts PATCH]", error);
-    return jsonError("Failed to update doubt", 500);
-  }
+  }, request);
 }

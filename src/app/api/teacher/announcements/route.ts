@@ -1,7 +1,12 @@
 import { isTeacherUser, requireTeacher } from "@/lib/auth/teacher";
-import { jsonError, jsonSuccess, zodErrorMessage } from "@/lib/api/response";
+import { jsonSuccess } from "@/lib/api/response";
 import { getPool } from "@/lib/db/postgres";
 import { z } from "zod";
+import { withApiErrorHandler, ValidationError, UnauthorizedError } from "@/lib/api/error";
+import { parseRequestBody } from "@/lib/api/validation";
+import { verifyCsrf } from "@/lib/api/csrf";
+import { rateLimit } from "@/lib/api/rate-limit";
+import { withTimeout } from "@/lib/api/timeout";
 
 export const dynamic = "force-dynamic";
 
@@ -16,17 +21,13 @@ const createAnnouncementSchema = z.object({
   { message: "batch_id is required when batch_target is 'specific'" }
 );
 
-/**
- * GET /api/teacher/announcements
- * Returns announcements posted by this teacher with read-tracking analytics.
- */
-export async function GET() {
-  const user = await requireTeacher();
-  if (!isTeacherUser(user)) return user;
+export async function GET(request: Request) {
+  return withApiErrorHandler(async (req) => {
+    const user = await requireTeacher();
+    if (!isTeacherUser(user)) return user;
 
-  try {
     const pool = getPool();
-    const { rows } = await pool.query(
+    const { rows } = await withTimeout(pool.query(
       `SELECT
          a.id,
          a.batch_id,
@@ -47,7 +48,7 @@ export async function GET() {
        ORDER BY a.created_at DESC
        LIMIT 100`,
       [user.id]
-    );
+    ));
 
     const announcements = rows.map((r) => ({
       id: r.id as string,
@@ -63,57 +64,44 @@ export async function GET() {
     }));
 
     return jsonSuccess({ announcements });
-  } catch (error) {
-    console.error("[teacher/announcements GET]", error);
-    return jsonError("Failed to load announcements", 500);
-  }
+  }, request);
 }
 
-/**
- * POST /api/teacher/announcements
- * Post a new announcement to one specific batch or all assigned batches.
- * Server-side validates teacher is assigned to every targeted batch.
- */
 export async function POST(request: Request) {
-  const user = await requireTeacher();
-  if (!isTeacherUser(user)) return user;
+  return withApiErrorHandler(async (req) => {
+    verifyCsrf(req);
+    rateLimit(req, { limit: 10, windowMs: 60 * 1000, identifier: `teacher_announcements_post:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
-  try {
-    const body = await request.json();
-    const parsed = createAnnouncementSchema.safeParse(body);
-    if (!parsed.success) {
-      return jsonError(zodErrorMessage(parsed.error), 400);
-    }
+    const user = await requireTeacher();
+    if (!isTeacherUser(user)) return user;
+
+    const data = await parseRequestBody(req, createAnnouncementSchema);
 
     const pool = getPool();
-    const { batch_target, batch_id, title, body: msgBody, priority } = parsed.data;
+    const { batch_target, batch_id, title, body: msgBody, priority } = data;
 
-    // ----- resolve which batch IDs to target -----
     let targetBatchIds: string[];
 
     if (batch_target === "all") {
-      // Fetch all batches this teacher is assigned to
-      const { rows: batchRows } = await pool.query<{ batch_id: string }>(
+      const { rows: batchRows } = await withTimeout(pool.query<{ batch_id: string }>(
         `SELECT DISTINCT batch_id FROM batch_teachers WHERE teacher_id = $1`,
         [user.id]
-      );
+      ));
       if (batchRows.length === 0) {
-        return jsonError("You are not assigned to any batches", 403);
+        throw new UnauthorizedError("You are not assigned to any batches");
       }
       targetBatchIds = batchRows.map((r) => r.batch_id);
     } else {
-      // specific batch — verify teacher is assigned
-      const check = await pool.query(
+      const check = await withTimeout(pool.query(
         `SELECT 1 FROM batch_teachers WHERE batch_id = $1 AND teacher_id = $2 LIMIT 1`,
         [batch_id, user.id]
-      );
+      ));
       if (check.rows.length === 0) {
-        return jsonError("You are not assigned to this batch", 403);
+        throw new UnauthorizedError("You are not assigned to this batch");
       }
       targetBatchIds = [batch_id!];
     }
 
-    // ----- insert one row per batch in a transaction -----
     const client = await pool.connect();
     const insertedIds: string[] = [];
     try {
@@ -136,8 +124,5 @@ export async function POST(request: Request) {
     }
 
     return jsonSuccess({ inserted: insertedIds.length, ids: insertedIds }, 201);
-  } catch (error) {
-    console.error("[teacher/announcements POST]", error);
-    return jsonError("Failed to post announcement", 500);
-  }
+  }, request);
 }

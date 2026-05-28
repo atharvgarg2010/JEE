@@ -1,6 +1,12 @@
 import { isAdminUser, requireAdmin } from "@/lib/auth/admin";
-import { jsonError, jsonSuccess, zodErrorMessage } from "@/lib/api/response";
+import { jsonSuccess } from "@/lib/api/response";
 import { createModuleSet, listModuleSets } from "@/lib/db/modules";
+import { withApiErrorHandler } from "@/lib/api/error";
+import { parseRequestBody } from "@/lib/api/validation";
+import { verifyCsrf } from "@/lib/api/csrf";
+import { rateLimit } from "@/lib/api/rate-limit";
+import { withTimeout } from "@/lib/api/timeout";
+import { logAuditAction } from "@/lib/db/audit";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -14,42 +20,42 @@ const createModuleSetSchema = z.object({
     .int()
     .min(1, "Must have at least 1 question")
     .max(1000, "Maximum 1000 questions per module"),
-});
+}).strict();
 
-/** GET /api/admin/modules — list all module sets */
-export async function GET() {
-  const user = await requireAdmin();
-  if (!isAdminUser(user)) return user;
+export async function GET(request: Request) {
+  return withApiErrorHandler(async (req) => {
+    const user = await requireAdmin();
+    if (!isAdminUser(user)) return user;
 
-  try {
-    const modules = await listModuleSets();
+    const modules = await withTimeout(listModuleSets());
     return jsonSuccess({ modules });
-  } catch (error) {
-    console.error("[admin/modules GET]", error);
-    return jsonError("Failed to load modules", 500);
-  }
+  }, request);
 }
 
-/** POST /api/admin/modules — create a module set */
 export async function POST(request: Request) {
-  const user = await requireAdmin();
-  if (!isAdminUser(user)) return user;
+  return withApiErrorHandler(async (req) => {
+    verifyCsrf(req);
+    rateLimit(req, { limit: 10, windowMs: 60 * 1000, identifier: `admin_modules_post:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
-  try {
-    const body = await request.json();
-    const parsed = createModuleSetSchema.safeParse(body);
-    if (!parsed.success) {
-      return jsonError(zodErrorMessage(parsed.error), 400);
-    }
+    const user = await requireAdmin();
+    if (!isAdminUser(user)) return user;
 
-    const module = await createModuleSet({
-      ...parsed.data,
+    const data = await parseRequestBody(req, createModuleSetSchema);
+
+    const module = await withTimeout(createModuleSet({
+      ...data,
       created_by: user.id,
+    }));
+
+    await logAuditAction({
+      actorId: user.id,
+      actorRole: user.role,
+      action: "CREATE_MODULE_SET",
+      entityType: "module_sets",
+      entityId: module.id,
+      metadata: { module_name: data.module_name, reqUrl: req.url },
     });
 
     return jsonSuccess({ module }, 201);
-  } catch (error) {
-    console.error("[admin/modules POST]", error);
-    return jsonError("Failed to create module", 500);
-  }
+  }, request);
 }

@@ -1,22 +1,27 @@
 import { isStudentUser, requireStudent } from "@/lib/auth/student";
-import { jsonError, jsonSuccess } from "@/lib/api/response";
+import { jsonSuccess } from "@/lib/api/response";
 import { getPool } from "@/lib/db/postgres";
+import { withApiErrorHandler, ValidationError } from "@/lib/api/error";
+import { parseRequestBody } from "@/lib/api/validation";
+import { verifyCsrf } from "@/lib/api/csrf";
+import { rateLimit } from "@/lib/api/rate-limit";
+import { withTimeout } from "@/lib/api/timeout";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/student/announcements
- * Returns announcements for the student's enrolled batch.
- * Ordered: unread first, newest first within each group.
- */
-export async function GET() {
-  const user = await requireStudent();
-  if (!isStudentUser(user)) return user;
+const patchSchema = z.object({
+  announcementId: z.string().uuid(),
+}).strict();
 
-  try {
+export async function GET(request: Request) {
+  return withApiErrorHandler(async (req) => {
+    const user = await requireStudent();
+    if (!isStudentUser(user)) return user;
+
     const pool = getPool();
 
-    const { rows } = await pool.query(
+    const { rows } = await withTimeout(pool.query(
       `SELECT
          a.id,
          a.batch_id,
@@ -38,7 +43,7 @@ export async function GET() {
        ORDER BY (ar.read_at IS NULL) DESC, a.created_at DESC
        LIMIT 50`,
       [user.id]
-    );
+    ));
 
     const announcements = rows.map((r) => ({
       id: r.id as string,
@@ -54,51 +59,40 @@ export async function GET() {
     }));
 
     return jsonSuccess({ announcements });
-  } catch (error) {
-    console.error("[student/announcements GET]", error);
-    return jsonError("Failed to load announcements", 500);
-  }
+  }, request);
 }
 
-/**
- * PATCH /api/student/announcements
- * Mark an announcement as read (idempotent).
- */
 export async function PATCH(request: Request) {
-  const user = await requireStudent();
-  if (!isStudentUser(user)) return user;
+  return withApiErrorHandler(async (req) => {
+    verifyCsrf(req);
+    rateLimit(req, { limit: 30, windowMs: 60 * 1000, identifier: `student_announcements_read:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
-  try {
-    const body = await request.json();
-    const announcementId = body.announcementId;
-    if (!announcementId || typeof announcementId !== "string") {
-      return jsonError("announcementId required", 400);
-    }
+    const user = await requireStudent();
+    if (!isStudentUser(user)) return user;
 
-    // Verify the announcement belongs to the student's batch before marking read
+    const data = await parseRequestBody(req, patchSchema);
+    const announcementId = data.announcementId;
+
     const pool = getPool();
-    const check = await pool.query(
+    const check = await withTimeout(pool.query(
       `SELECT 1
        FROM announcements a
        JOIN batch_students bs ON bs.batch_id = a.batch_id AND bs.student_id = $2
        WHERE a.id = $1
        LIMIT 1`,
       [announcementId, user.id]
-    );
+    ));
     if (check.rows.length === 0) {
-      return jsonError("Announcement not found in your batch", 404);
+      throw new ValidationError("Announcement not found in your batch");
     }
 
-    await pool.query(
+    await withTimeout(pool.query(
       `INSERT INTO announcement_reads (announcement_id, student_id)
        VALUES ($1, $2)
        ON CONFLICT (announcement_id, student_id) DO NOTHING`,
       [announcementId, user.id]
-    );
+    ));
 
     return jsonSuccess({ read: true });
-  } catch (error) {
-    console.error("[student/announcements PATCH]", error);
-    return jsonError("Failed to mark announcement as read", 500);
-  }
+  }, request);
 }

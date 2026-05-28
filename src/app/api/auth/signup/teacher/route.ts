@@ -1,32 +1,36 @@
 import { hashPassword } from "@/lib/auth/password";
 import { setSessionCookie, getRedirectPathForRole } from "@/lib/auth/session";
-import { jsonError, jsonSuccess, zodErrorMessage } from "@/lib/api/response";
+import { jsonSuccess, jsonError } from "@/lib/api/response";
 import {
   createTeacher,
   toPublicUser,
   usernameExists,
 } from "@/lib/db/users";
 import { teacherSignupSchema } from "@/lib/validations/auth";
+import { withApiErrorHandler } from "@/lib/api/error";
+import { rateLimit } from "@/lib/api/rate-limit";
+import { verifyCsrf } from "@/lib/api/csrf";
+import { parseRequestBody } from "@/lib/api/validation";
+import { z } from "zod";
+
+const schema = z.object({
+  fullName: z.string(),
+  username: z.string().transform(val => val.toLowerCase()),
+  password: z.string(),
+  confirmPassword: z.string(),
+  subject: z.string(),
+  teacherCode: z.string().optional(),
+  experience: z.coerce.number().optional(),
+}).and(teacherSignupSchema);
 
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const parsed = teacherSignupSchema.safeParse({
-      fullName: body.fullName,
-      username: body.username?.toLowerCase?.() ?? body.username,
-      password: body.password,
-      confirmPassword: body.confirmPassword,
-      subject: body.subject,
-      teacherCode: body.teacherCode,
-      experience: body.experience,
-    });
+  return withApiErrorHandler(async (req) => {
+    verifyCsrf(req);
+    // Strict rate limit for signups: 3 per hour
+    rateLimit(req, { limit: 3, windowMs: 60 * 60 * 1000, identifier: `signup_teacher:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
-    if (!parsed.success) {
-      return jsonError(zodErrorMessage(parsed.error), 400);
-    }
-
-    const { fullName, username, password, subject, teacherCode, experience } =
-      parsed.data;
+    const data = await parseRequestBody(req, schema);
+    const { fullName, username, password, subject, teacherCode, experience } = data;
 
     if (await usernameExists(username)) {
       return jsonError("username: Username is already taken", 409);
@@ -51,9 +55,6 @@ export async function POST(request: Request) {
     return jsonSuccess({
       user: toPublicUser(user),
       redirectTo: getRedirectPathForRole(user.role),
-    });
-  } catch (error) {
-    console.error("[teacher-signup]", error);
-    return jsonError("Unable to create account. Please try again.", 500);
-  }
+    }, 201);
+  }, request);
 }

@@ -1,55 +1,62 @@
 import { getCurrentUser } from "@/lib/auth/session";
-import { jsonError, jsonSuccess } from "@/lib/api/response";
+import { jsonSuccess } from "@/lib/api/response";
 import {
   listTeacherNotifications,
   markNotificationRead,
 } from "@/lib/db/teacher-notifications";
+import { withApiErrorHandler, UnauthorizedError, ValidationError } from "@/lib/api/error";
+import { parseRequestBody } from "@/lib/api/validation";
+import { verifyCsrf } from "@/lib/api/csrf";
+import { rateLimit } from "@/lib/api/rate-limit";
+import { withTimeout } from "@/lib/api/timeout";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "teacher") {
-    return jsonError("Unauthorized", 401);
-  }
+const patchSchema = z.object({
+  notificationId: z.string().uuid(),
+  action: z.enum(["read", "pin"]),
+}).strict();
 
-  try {
-    const notifications = await listTeacherNotifications(user.id);
+export async function GET(request: Request) {
+  return withApiErrorHandler(async (req) => {
+    const user = await getCurrentUser();
+    if (!user || user.role !== "teacher") {
+      throw new UnauthorizedError();
+    }
+
+    const notifications = await withTimeout(listTeacherNotifications(user.id));
     if (!Array.isArray(notifications)) {
       throw new Error("Invalid notifications payload");
     }
 
     return jsonSuccess({ notifications });
-  } catch (error) {
-    console.error("[teacher/notifications GET]", error);
-    return jsonSuccess({ notifications: [] });
-  }
+  }, request);
 }
 
 export async function PATCH(request: Request) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "teacher") {
-    return jsonError("Unauthorized", 401);
-  }
+  return withApiErrorHandler(async (req) => {
+    verifyCsrf(req);
+    rateLimit(req, { limit: 30, windowMs: 60 * 1000, identifier: `teacher_notifications_patch:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
-  try {
-    const body = await request.json();
-    const { notificationId, action } = body;
-    if (!notificationId) return jsonError("notificationId required", 400);
+    const user = await getCurrentUser();
+    if (!user || user.role !== "teacher") {
+      throw new UnauthorizedError();
+    }
+
+    const data = await parseRequestBody(req, patchSchema);
+    const { notificationId, action } = data;
 
     if (action === "read") {
-      const ok = await markNotificationRead(notificationId, user.id);
-      if (!ok) return jsonError("Notification not found", 404);
+      const ok = await withTimeout(markNotificationRead(notificationId, user.id));
+      if (!ok) throw new ValidationError("Notification not found");
       return jsonSuccess({ read: true });
     }
 
     if (action === "pin") {
-      return jsonError("Pin action not supported", 400);
+      throw new ValidationError("Pin action not supported");
     }
 
-    return jsonError("Unknown notification action", 400);
-  } catch (error) {
-    console.error("[teacher/notifications PATCH]", error);
-    return jsonError("Failed to update notification", 500);
-  }
+    throw new ValidationError("Unknown notification action");
+  }, request);
 }

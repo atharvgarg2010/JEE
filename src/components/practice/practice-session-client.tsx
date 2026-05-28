@@ -365,7 +365,7 @@ export function PracticeSessionClient() {
 
       {current && (
         <div className="animate-fade-in-up grid gap-6 lg:grid-cols-[1fr_300px]">
-          <div className="space-y-6">
+          <div className="space-y-6 pb-28 lg:pb-0">
             <article className="rounded-md border border-zinc-800 bg-zinc-900 p-6 sm:p-8">
               <div className="mb-5 flex flex-wrap items-center gap-2">
                 <Badge>{current.question_type.toUpperCase()}</Badge>
@@ -407,7 +407,7 @@ export function PracticeSessionClient() {
                       <label
                         key={opt.id}
                         className={cn(
-                          "flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 transition-colors",
+                          "flex cursor-pointer items-center gap-3 rounded-md border px-4 py-4 sm:py-3 min-h-[56px] transition-colors",
                           selected
                             ? "border-indigo-500 bg-indigo-500/10"
                             : "border-zinc-800 bg-zinc-950 hover:bg-zinc-800/50",
@@ -421,7 +421,7 @@ export function PracticeSessionClient() {
                           checked={selected}
                           onChange={() => setSelectedAnswer(opt.id)}
                           disabled={showResult}
-                          className="accent-indigo-500 h-4 w-4"
+                          className="accent-indigo-500 h-5 w-5 sm:h-4 sm:w-4"
                         />
                         <span className="font-semibold text-zinc-500 w-6 shrink-0">
                           {String.fromCharCode(65 + i)}.
@@ -441,7 +441,7 @@ export function PracticeSessionClient() {
                       onChange={(e) => setSelectedAnswer(e.target.value)}
                       disabled={showResult}
                       placeholder="Enter numerical answer"
-                      className="max-w-xs text-lg font-mono border-zinc-700 bg-zinc-950/80"
+                      className="max-w-xs text-lg font-mono border-zinc-700 bg-zinc-950/80 min-h-[56px] sm:min-h-0"
                     />
                   </FormFieldGroup>
                 )}
@@ -461,9 +461,9 @@ export function PracticeSessionClient() {
             )}
 
             {solution && !reattempting && (
-              <Alert className="animate-fade-in border-indigo-500/30 bg-indigo-500/10 rounded-md">
-                <BookOpen className="h-4 w-4 text-indigo-400" />
-                <AlertDescription>
+              <Alert className="animate-fade-in border-indigo-500/30 bg-indigo-500/10 rounded-md overflow-x-auto">
+                <BookOpen className="h-4 w-4 text-indigo-400 shrink-0" />
+                <AlertDescription className="min-w-[200px]">
                   <p className="mb-2 text-xs font-medium uppercase tracking-wider text-indigo-400">
                     Solution
                     {solutionViewCount > 0 && (
@@ -473,7 +473,7 @@ export function PracticeSessionClient() {
                       </span>
                     )}
                   </p>
-                  <div className="prose prose-invert text-zinc-300">
+                  <div className="prose prose-invert text-zinc-300 max-w-none">
                     <QuestionMarkdown content={solution} />
                   </div>
                 </AlertDescription>
@@ -481,9 +481,33 @@ export function PracticeSessionClient() {
             )}
 
             <AttemptHistoryPanel history={history} />
+
+            {/* Mobile Secondary Actions inline */}
+            <div className="lg:hidden space-y-2">
+              <Button
+                variant="secondary"
+                className="w-full min-h-[48px]"
+                onClick={handleViewSolution}
+                disabled={loadingSolution}
+              >
+                <BookOpen className="h-4 w-4" />
+                {loadingSolution ? "Loading..." : "View solution"}
+              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="secondary" className="min-h-[48px]" onClick={toggleDoubt}>
+                  <Flag className="h-4 w-4" />
+                  {(progress?.doubt_marked || localDoubt) ? "Unmark" : "Doubt"}
+                </Button>
+                <Button variant="secondary" className="min-h-[48px]" onClick={toggleRevision}>
+                  <Bookmark className="h-4 w-4" />
+                  {progress?.saved_for_revision ? "Unsave" : "Save"}
+                </Button>
+              </div>
+              {current && <NotifyTeacherButton questionId={current.id} />}
+            </div>
           </div>
 
-          <aside className="space-y-3 lg:sticky lg:top-6 lg:self-start">
+          <aside className="hidden lg:block space-y-3 lg:sticky lg:top-6 lg:self-start">
             <div className="rounded-md border border-zinc-800 bg-zinc-900 p-4 space-y-2">
               <p className="text-xs text-zinc-500">
                 Question {qIndex + 1} of {questions.length}
@@ -571,6 +595,49 @@ export function PracticeSessionClient() {
               </div>
             </div>
           </aside>
+
+          {/* Mobile Fixed Bottom Action Bar */}
+          <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 flex items-center gap-2 bg-zinc-950 border-t border-zinc-800 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            <Button
+              variant="secondary"
+              className="h-12 w-12 shrink-0 p-0 border-zinc-700 bg-zinc-900"
+              disabled={qIndex === 0}
+              onClick={() => setQuery({ q: String(qIndex - 1) })}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            
+            <div className="flex-1">
+              {!showResult ? (
+                <Button
+                  className="w-full h-12 text-base"
+                  onClick={handleSubmit}
+                  disabled={!selectedAnswer.trim() || submitting}
+                >
+                  <Send className="h-5 w-5 mr-2" />
+                  {submitting ? "Submitting..." : "Submit"}
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  className="w-full h-12 text-base border border-zinc-700"
+                  onClick={handleReattempt}
+                >
+                  <RefreshCw className="h-5 w-5 mr-2" />
+                  Reattempt
+                </Button>
+              )}
+            </div>
+
+            <Button
+              variant="secondary"
+              className="h-12 w-12 shrink-0 p-0 border-zinc-700 bg-zinc-900"
+              disabled={qIndex >= questions.length - 1}
+              onClick={() => setQuery({ q: String(qIndex + 1) })}
+            >
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       )}
     </div>

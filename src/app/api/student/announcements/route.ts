@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/student/announcements
  * Returns announcements for the student's enrolled batch.
- * Ordered by most recent first.
+ * Ordered: unread first, newest first within each group.
  */
 export async function GET() {
   const user = await requireStudent();
@@ -16,22 +16,27 @@ export async function GET() {
   try {
     const pool = getPool();
 
-    // Get student's batch via batch_students (authoritative source)
     const { rows } = await pool.query(
       `SELECT
-         a.id, a.batch_id, a.title, a.body, a.created_at,
-         b.name AS batch_name,
+         a.id,
+         a.batch_id,
+         a.title,
+         a.body,
+         a.priority,
+         a.created_at,
+         b.name  AS batch_name,
+         b.code  AS batch_code,
          COALESCE(u.full_name, u.username) AS teacher_name,
          ar.read_at
        FROM batch_students bs
-       JOIN announcements a ON a.batch_id = bs.batch_id
-       JOIN batches b ON b.id = bs.batch_id
-       JOIN users u ON u.id = a.teacher_id
+       JOIN announcements a  ON a.batch_id = bs.batch_id
+       JOIN batches b        ON b.id = bs.batch_id
+       JOIN users u          ON u.id = a.teacher_id
        LEFT JOIN announcement_reads ar
          ON ar.announcement_id = a.id AND ar.student_id = bs.student_id
        WHERE bs.student_id = $1
-       ORDER BY a.created_at DESC
-       LIMIT 30`,
+       ORDER BY (ar.read_at IS NULL) DESC, a.created_at DESC
+       LIMIT 50`,
       [user.id]
     );
 
@@ -39,8 +44,10 @@ export async function GET() {
       id: r.id as string,
       batch_id: r.batch_id as string,
       batch_name: r.batch_name as string,
+      batch_code: r.batch_code as string,
       title: r.title as string,
       body: r.body as string,
+      priority: r.priority as "normal" | "important" | "urgent",
       teacher_name: r.teacher_name as string,
       created_at: String(r.created_at),
       is_read: r.read_at !== null,
@@ -54,9 +61,8 @@ export async function GET() {
 }
 
 /**
- * POST /api/student/announcements/[id]/read
- * Mark an announcement as read.
- * Handled inline via PATCH with action body.
+ * PATCH /api/student/announcements
+ * Mark an announcement as read (idempotent).
  */
 export async function PATCH(request: Request) {
   const user = await requireStudent();
@@ -69,7 +75,20 @@ export async function PATCH(request: Request) {
       return jsonError("announcementId required", 400);
     }
 
+    // Verify the announcement belongs to the student's batch before marking read
     const pool = getPool();
+    const check = await pool.query(
+      `SELECT 1
+       FROM announcements a
+       JOIN batch_students bs ON bs.batch_id = a.batch_id AND bs.student_id = $2
+       WHERE a.id = $1
+       LIMIT 1`,
+      [announcementId, user.id]
+    );
+    if (check.rows.length === 0) {
+      return jsonError("Announcement not found in your batch", 404);
+    }
+
     await pool.query(
       `INSERT INTO announcement_reads (announcement_id, student_id)
        VALUES ($1, $2)

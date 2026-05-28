@@ -19,6 +19,7 @@ import { ProgressRing } from "@/components/dashboard/progress-ring";
 import { ContributionCalendar } from "@/components/dashboard/contribution-calendar";
 import { StudentDashboardSkeleton } from "@/components/skeletons/dashboard-skeletons";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { StudentAnnouncementsWidget } from "@/components/dashboard/student-announcements-widget";
 import type { DashboardOverview } from "@/types/dashboard";
 
 const SUBJECT_ICONS: Record<string, typeof Atom> = {
@@ -96,7 +97,7 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
 
       <section>
         <h2 className="mb-4 text-lg font-semibold text-white">Pending actions</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           {[
             {
               label: "Doubts pending",
@@ -147,7 +148,40 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
         </div>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      {overview.weak_chapters.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-lg font-semibold text-white">The Weakness Ledger</h2>
+          <div className="overflow-x-auto w-full pb-2">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Chapter</TableHead>
+                  <TableHead className="hidden md:table-cell">Subject</TableHead>
+                  <TableHead>Accuracy</TableHead>
+                  <TableHead className="hidden sm:table-cell">Mistakes</TableHead>
+                  <TableHead className="hidden sm:table-cell">Pending Doubts</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {overview.weak_chapters.map((ch) => (
+                  <TableRow key={ch.chapter_id} className="group cursor-pointer" onClick={() => window.location.href = `/student/subject/${ch.subject_slug}`}>
+                    <TableCell className="font-medium text-zinc-100 whitespace-nowrap">{ch.chapter_name}</TableCell>
+                    <TableCell className="hidden md:table-cell text-zinc-400">{ch.subject_name}</TableCell>
+                    <TableCell className="text-red-400 font-mono">{ch.accuracy_percent}%</TableCell>
+                    <TableCell className="hidden sm:table-cell text-zinc-400 font-mono">{ch.mistake_count}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-zinc-400 font-mono">{ch.doubt_count}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </section>
+      )}
+
+      {/* Announcements widget */}
+      <StudentAnnouncementsWidget />
+
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         {[
           { label: "Available", value: overview.total_questions, icon: Target },
           { label: "Attempted", value: overview.attempted, icon: TrendingUp },
@@ -172,7 +206,7 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
 
       <section>
         <h2 className="mb-4 text-lg font-semibold text-white">PCM subjects</h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
           {overview.subjects.map((sub) => {
             const Icon = SUBJECT_ICONS[sub.slug] ?? Atom;
             const gradient =
@@ -202,34 +236,6 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
           })}
         </div>
       </section>
-
-      {overview.weak_chapters.length > 0 && (
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-white">The Weakness Ledger</h2>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Chapter</TableHead>
-                <TableHead className="hidden md:table-cell">Subject</TableHead>
-                <TableHead>Accuracy</TableHead>
-                <TableHead className="hidden sm:table-cell">Mistakes</TableHead>
-                <TableHead className="hidden sm:table-cell">Pending Doubts</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {overview.weak_chapters.map((ch) => (
-                <TableRow key={ch.chapter_id} className="group cursor-pointer" onClick={() => window.location.href = `/student/subject/${ch.subject_slug}`}>
-                  <TableCell className="font-medium text-zinc-100">{ch.chapter_name}</TableCell>
-                  <TableCell className="hidden md:table-cell text-zinc-400">{ch.subject_name}</TableCell>
-                  <TableCell className="text-red-400 font-mono">{ch.accuracy_percent}%</TableCell>
-                  <TableCell className="hidden sm:table-cell text-zinc-400 font-mono">{ch.mistake_count}</TableCell>
-                  <TableCell className="hidden sm:table-cell text-zinc-400 font-mono">{ch.doubt_count}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </section>
-      )}
 
       <section className="rounded-md border border-zinc-800 bg-zinc-900 p-6">
         <h2 className="mb-4 text-lg font-semibold text-white">Daily practice</h2>

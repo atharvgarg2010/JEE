@@ -14,6 +14,7 @@ import { BatchOverviewPanel } from "@/components/dashboard/batch-overview-panel"
 import { QuickActionsPanel } from "@/components/dashboard/quick-actions-panel";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getTeacherQuestionStats } from "@/lib/db/questions";
+import { TeacherAnnouncementsPanel } from "@/components/dashboard/teacher-announcements-panel";
 
 export const metadata = {
   title: "Teacher Dashboard | JEE Tracker",
@@ -89,10 +90,13 @@ export default async function TeacherDashboardPage() {
         ))}
       </div>
 
-      {/* NEW: Quick Actions Panel */}
+      {/* Quick Actions Panel */}
       <QuickActionsPanel />
 
-      {/* NEW: Student Analytics Panel */}
+      {/* Announcements Panel */}
+      <TeacherAnnouncementsPanel />
+
+      {/* Student Analytics Panel */}
       <StudentAnalyticsPanel />
 
       {/* NEW: Question Insights Panel */}

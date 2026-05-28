@@ -32,6 +32,10 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  overscroll-behavior-y: none;
+  padding-bottom: env(safe-area-inset-bottom);
+  /* Touch action optimizations for mobile */
+  touch-action: manipulation;
 }
 
 @keyframes fade-in-up {

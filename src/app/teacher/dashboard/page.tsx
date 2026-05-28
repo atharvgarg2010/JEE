@@ -15,6 +15,7 @@ import { QuickActionsPanel } from "@/components/dashboard/quick-actions-panel";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getTeacherQuestionStats } from "@/lib/db/questions";
 import { TeacherAnnouncementsPanel } from "@/components/dashboard/teacher-announcements-panel";
+import { OfflineModuleDoubtsPanel } from "@/components/dashboard/offline-module-doubts-panel";
 
 export const metadata = {
   title: "Teacher Dashboard | JEE Tracker",
@@ -98,6 +99,9 @@ export default async function TeacherDashboardPage() {
 
       {/* Student Analytics Panel */}
       <StudentAnalyticsPanel />
+
+      {/* Offline Module Doubts Panel */}
+      <OfflineModuleDoubtsPanel />
 
       {/* NEW: Question Insights Panel */}
       <QuestionInsightsPanel />

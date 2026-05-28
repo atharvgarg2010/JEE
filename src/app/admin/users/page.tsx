@@ -117,29 +117,40 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/40">
-              {filtered.map((u) => (
-                <tr key={u.id} className="transition-colors hover:bg-zinc-800/30">
-                  <td className="px-5 py-3">
-                    <p className="font-medium text-white">{u.full_name ?? u.username}</p>
-                    <p className="text-xs text-zinc-500">@{u.username}</p>
-                  </td>
-                  {tab === "student" ? (
-                    <>
-                      <td className="px-5 py-3 font-mono text-xs text-zinc-400">{u.roll_number ?? "—"}</td>
-                      <td className="px-5 py-3">
-                        {u.batch_name ? (
-                          <Link
-                            href={`/admin/batches/${u.batch_id}`}
-                            className="rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-violet-300 hover:bg-violet-500/25 transition-colors"
-                          >
-                            {u.batch_name}
-                          </Link>
-                        ) : (
-                          <span className="text-xs text-zinc-600">Not enrolled</span>
-                        )}
-                      </td>
-                    </>
-                  ) : (
+              {filtered.map((u) => {
+                const isStudent = tab === "student";
+                return (
+                  <tr
+                    key={u.id}
+                    className={`transition-colors hover:bg-zinc-800/30 ${isStudent ? "cursor-pointer" : ""}`}
+                    onClick={() => {
+                      if (isStudent) {
+                        window.location.href = `/admin/users/${u.id}`;
+                      }
+                    }}
+                  >
+                    <td className="px-5 py-3">
+                      <p className="font-medium text-white">{u.full_name ?? u.username}</p>
+                      <p className="text-xs text-zinc-500">@{u.username}</p>
+                    </td>
+                    {isStudent ? (
+                      <>
+                        <td className="px-5 py-3 font-mono text-xs text-zinc-400">{u.roll_number ?? "—"}</td>
+                        <td className="px-5 py-3">
+                          {u.batch_name ? (
+                            <Link
+                              href={`/admin/batches/${u.batch_id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-violet-300 hover:bg-violet-500/25 transition-colors"
+                            >
+                              {u.batch_name}
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-zinc-600">Not enrolled</span>
+                          )}
+                        </td>
+                      </>
+                    ) : (
                     <>
                       <td className="px-5 py-3">
                         {u.subject ? (
@@ -159,7 +170,7 @@ export default function AdminUsersPage() {
                     })}
                   </td>
                 </tr>
-              ))}
+              ); })}
             </tbody>
           </table>
         </div>

@@ -25,7 +25,7 @@ export default async function StudentLayout({
           { href: "/student/mistakes", label: "Mistakes" },
           { href: "/student/doubts", label: "Doubts" },
           { href: "/student/revision", label: "Revision" },
-          { href: "/student/practice", label: "Practice" },
+          { href: "/student/module-log", label: "Modules" },
           { href: "/student/announcements", label: "Notices" },
         ]}
       >

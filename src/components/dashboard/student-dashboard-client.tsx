@@ -83,14 +83,11 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button asChild variant="secondary">
+          <Button asChild>
             <Link href="/student/explorer">
               <Compass className="h-4 w-4" />
               Explorer
             </Link>
-          </Button>
-          <Button asChild>
-            <Link href="/student/practice">Resume Practice</Link>
           </Button>
         </div>
       </div>
@@ -123,7 +120,7 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
             {
               label: "Today solved",
               value: pending.today_solved,
-              href: "/student/practice",
+              href: "/student/explorer",
               icon: Target,
               color: "text-cyan-400",
             },

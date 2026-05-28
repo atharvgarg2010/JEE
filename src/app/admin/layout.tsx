@@ -21,6 +21,7 @@ export default async function AdminLayout({
         { href: "/admin/batches", label: "Batches" },
         { href: "/admin/users", label: "Users" },
         { href: "/admin/analytics", label: "Analytics" },
+        { href: "/admin/modules", label: "Modules" },
       ]}
     >
       {children}

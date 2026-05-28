@@ -1,49 +1,46 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, AlertCircle } from "lucide-react";
-import { isTeacherUser, requireTeacher } from "@/lib/auth/teacher";
+import { isAdminUser, requireAdmin } from "@/lib/auth/admin";
 import { getPool } from "@/lib/db/postgres";
 import { OfflineModuleAnalyticsSection } from "@/components/dashboard/offline-module-analytics";
 
 export const dynamic = "force-dynamic";
 
-export default async function TeacherStudentPage({
+export default async function AdminStudentDetailPage({
   params,
 }: {
   params: Promise<{ studentId: string }>;
 }) {
-  const user = await requireTeacher();
-  if (!isTeacherUser(user)) return notFound();
+  const user = await requireAdmin();
+  if (!isAdminUser(user)) return notFound();
 
   const { studentId } = await params;
   const pool = getPool();
 
-  // Fetch student + verify teacher has access via shared batch
+  // Fetch student details
   const { rows } = await pool.query<{
     id: string;
     username: string;
     full_name: string | null;
     roll_number: string | null;
     batch_code: string | null;
+    batch_name: string | null;
   }>(
     `SELECT
        u.id,
        u.username,
        u.full_name,
        u.roll_number,
-       b.code AS batch_code
+       u.batch_code,
+       b.name AS batch_name
      FROM users u
      LEFT JOIN batch_students bs ON bs.student_id = u.id
      LEFT JOIN batches b ON b.id = bs.batch_id
      WHERE u.id = $1
        AND u.role = 'student'
-       AND EXISTS (
-         SELECT 1 FROM batch_teachers bt
-         WHERE bt.batch_id = bs.batch_id
-           AND bt.teacher_id = $2
-       )
      LIMIT 1`,
-    [studentId, user.id],
+     [studentId],
   );
 
   const student = rows[0];
@@ -54,10 +51,10 @@ export default async function TeacherStudentPage({
         <AlertCircle className="mb-3 h-8 w-8 text-zinc-700" />
         <p className="text-sm text-zinc-500">Student not found or access denied.</p>
         <Link
-          href="/teacher/students"
+          href="/admin/users"
           className="mt-3 text-xs text-indigo-400 hover:text-indigo-300"
         >
-          ← Back to students
+          ← Back to users
         </Link>
       </div>
     );
@@ -66,11 +63,11 @@ export default async function TeacherStudentPage({
   return (
     <div className="space-y-6">
       <Link
-        href="/teacher/students"
+        href="/admin/users"
         className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to students
+        Back to users
       </Link>
 
       {/* Profile card */}
@@ -83,7 +80,7 @@ export default async function TeacherStudentPage({
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { label: "Roll No.", value: student.roll_number ?? "N/A" },
-            { label: "Batch", value: student.batch_code ?? "N/A" },
+            { label: "Batch Name", value: student.batch_name ?? "N/A" },
             { label: "Role", value: "Student" },
             { label: "ID", value: student.id.slice(0, 8) + "…" },
           ].map(({ label, value }) => (
@@ -102,7 +99,7 @@ export default async function TeacherStudentPage({
         </div>
 
         {/* Offline Module Progress */}
-        <OfflineModuleAnalyticsSection studentId={studentId} />
+        <OfflineModuleAnalyticsSection studentId={studentId} role="admin" />
       </div>
     </div>
   );

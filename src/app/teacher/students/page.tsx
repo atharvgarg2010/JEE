@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Users, Search } from "lucide-react";
 import type { BatchWithStats, BatchStudentRow } from "@/lib/db/batches";
 
 export default function TeacherStudentsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialBatch = searchParams.get("batch") ?? "";
 
   const [batches, setBatches] = useState<BatchWithStats[]>([]);
@@ -36,7 +37,7 @@ export default function TeacherStudentsPage() {
   useEffect(() => {
     if (!selectedBatch) return;
     setLoadingStudents(true);
-    fetch(`/api/admin/batches/${selectedBatch}/students?limit=100`)
+    fetch(`/api/teacher/batches/${selectedBatch}/students?limit=100`)
       .then((r) => r.json())
       .then((d) => {
         setStudents(d.students ?? []);
@@ -130,9 +131,13 @@ export default function TeacherStudentsPage() {
             </thead>
             <tbody className="divide-y divide-zinc-800/40">
               {filtered.map((s) => (
-                <tr key={s.student_id} className="hover:bg-zinc-800/30 transition-colors">
+                <tr 
+                  key={s.student_id} 
+                  onClick={() => router.push(`/teacher/students/${s.student_id}`)}
+                  className="hover:bg-zinc-800/30 transition-colors cursor-pointer group"
+                >
                   <td className="px-5 py-3.5">
-                    <p className="font-medium text-white">{s.student_name}</p>
+                    <p className="font-medium text-white group-hover:text-indigo-400 transition-colors">{s.student_name}</p>
                     <p className="text-xs text-zinc-500">@{s.student_username}</p>
                   </td>
                   <td className="px-5 py-3.5 font-mono text-xs text-zinc-400">{s.roll_number ?? "—"}</td>

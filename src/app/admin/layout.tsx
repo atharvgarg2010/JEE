@@ -18,6 +18,7 @@ export default async function AdminLayout({
       user={user}
       navItems={[
         { href: "/admin/dashboard", label: "Dashboard" },
+        { href: "/admin/structure", label: "Structure" },
         { href: "/admin/batches", label: "Batches" },
         { href: "/admin/users", label: "Users" },
         { href: "/admin/analytics", label: "Analytics" },

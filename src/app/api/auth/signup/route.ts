@@ -18,7 +18,6 @@ const schema = z.object({
   fullName: z.string(),
   username: z.string().transform(val => val.toLowerCase()),
   rollNumber: z.string(),
-  batchCode: z.string(),
   password: z.string(),
   confirmPassword: z.string(),
 }).and(studentSignupSchema);
@@ -30,7 +29,7 @@ export async function POST(request: Request) {
     rateLimit(req, { limit: 3, windowMs: 60 * 60 * 1000, identifier: `signup_student:${req.headers.get("x-forwarded-for") || "unknown"}` });
 
     const data = await parseRequestBody(req, schema);
-    const { fullName, username, rollNumber, batchCode, password } = data;
+    const { fullName, username, rollNumber, password } = data;
 
     if (await usernameExists(username)) {
       return jsonError("Username is already taken", 409);
@@ -45,7 +44,6 @@ export async function POST(request: Request) {
       full_name: fullName,
       username,
       roll_number: rollNumber,
-      batch_code: batchCode,
       password_hash,
     });
 

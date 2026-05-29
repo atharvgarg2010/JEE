@@ -232,9 +232,13 @@ export default function AdminAnalyticsClient() {
                   </thead>
                   <tbody className="divide-y divide-zinc-800/40">
                     {students.map((s) => (
-                      <tr key={s.student_id} className="hover:bg-zinc-800/30 transition-colors">
+                      <tr 
+                        key={s.student_id} 
+                        onClick={() => { window.location.href = `/admin/users/${s.student_id}`; }}
+                        className="hover:bg-zinc-800/30 transition-colors cursor-pointer group"
+                      >
                         <td className="px-5 py-3.5 text-zinc-600 font-mono text-xs whitespace-nowrap">#{s.rank}</td>
-                        <td className="px-5 py-3.5 font-medium text-white whitespace-nowrap">{s.student_name}</td>
+                        <td className="px-5 py-3.5 font-medium text-white whitespace-nowrap group-hover:text-violet-400 transition-colors">{s.student_name}</td>
                         <td className="px-5 py-3.5 whitespace-nowrap">
                           {s.batch_name
                             ? <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-xs text-violet-300">{s.batch_name}</span>

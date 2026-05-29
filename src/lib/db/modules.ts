@@ -15,6 +15,7 @@ import type {
 
 interface ModuleSetRow {
   id: string;
+  chapter_id: string | null;
   subject: string;
   chapter: string;
   module_name: string;
@@ -54,6 +55,7 @@ interface ModuleDoubtNotifRow {
 function mapModuleSet(row: ModuleSetRow): ModuleSet {
   return {
     id: row.id,
+    chapter_id: row.chapter_id ?? null,
     subject: row.subject,
     chapter: row.chapter,
     module_name: row.module_name,
@@ -81,8 +83,7 @@ function mapLog(row: ModuleQuestionLogRow): ModuleQuestionLog {
 // ============================================================
 
 export interface CreateModuleSetInput {
-  subject: string;
-  chapter: string;
+  chapter_id: string;
   module_name: string;
   question_count: number;
   created_by: string;
@@ -92,13 +93,30 @@ export async function createModuleSet(
   input: CreateModuleSetInput,
 ): Promise<ModuleSet> {
   const pool = getPool();
+  
+  // First, verify chapter exists and get subject + chapter names
+  const { rows: chapterRows } = await pool.query(
+    `SELECT c.id, c.name as chapter_name, s.name as subject_name
+     FROM chapters c
+     JOIN subjects s ON s.id = c.subject_id
+     WHERE c.id = $1 LIMIT 1`,
+    [input.chapter_id]
+  );
+  
+  if (!chapterRows[0]) {
+    throw new Error("Invalid chapter ID");
+  }
+  
+  const { subject_name, chapter_name } = chapterRows[0];
+
   const { rows } = await pool.query<ModuleSetRow>(
-    `INSERT INTO module_sets (subject, chapter, module_name, question_count, created_by)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO module_sets (chapter_id, subject, chapter, module_name, question_count, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
     [
-      input.subject.trim(),
-      input.chapter.trim(),
+      input.chapter_id,
+      subject_name,
+      chapter_name,
       input.module_name.trim(),
       input.question_count,
       input.created_by,
@@ -249,7 +267,31 @@ export async function createOrGetModuleDoubtNotification(input: {
 }): Promise<{ notification: ModuleDoubtNotification; created: boolean }> {
   const pool = getPool();
 
-  // Check for existing unresolved notification for same student+module+question
+  // 1. Resolve exact teacher mapping
+  const { rows: teacherResolve } = await pool.query(
+    `SELECT bt.teacher_id, u.role
+     FROM module_sets ms
+     JOIN chapters c ON c.id = ms.chapter_id
+     JOIN batch_students bs ON bs.student_id = $1
+     JOIN batch_teachers bt ON bt.batch_id = bs.batch_id AND bt.subject_id = c.subject_id
+     JOIN users u ON u.id = bt.teacher_id
+     WHERE ms.id = $2
+     LIMIT 1`,
+    [input.student_id, input.module_set_id]
+  );
+
+  if (teacherResolve.length === 0) {
+    throw new Error("No mapped teacher found for this subject in your batch");
+  }
+
+  const teacher = teacherResolve[0];
+  if (teacher.role !== "teacher") {
+    throw new Error("Mapped user is not a teacher");
+  }
+
+  const teacherId = teacher.teacher_id;
+
+  // 2. Check for existing unresolved notification
   const { rows: existing } = await pool.query(
     `SELECT mdn.*, ms.module_name, ms.subject, ms.chapter,
             COALESCE(u.full_name, u.username) AS student_name
@@ -271,12 +313,12 @@ export async function createOrGetModuleDoubtNotification(input: {
     };
   }
 
-  // Insert new notification
+  // 3. Insert new notification
   const { rows } = await pool.query(
     `WITH inserted AS (
        INSERT INTO module_doubt_notifications
-         (student_id, module_set_id, question_number, status)
-       VALUES ($1, $2, $3, $4)
+         (student_id, module_set_id, question_number, status, teacher_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *
      )
      SELECT i.*, ms.module_name, ms.subject, ms.chapter,
@@ -289,6 +331,7 @@ export async function createOrGetModuleDoubtNotification(input: {
       input.module_set_id,
       input.question_number,
       input.status,
+      teacherId,
     ],
   );
 
@@ -314,12 +357,8 @@ export async function listModuleDoubtNotifications(
   const pool = getPool();
   const params: (string | boolean)[] = [teacherId];
   const conditions: string[] = [
-    // Teacher sees notifications from students in their batches
-    `EXISTS (
-      SELECT 1 FROM batch_students bs
-      JOIN batch_teachers bt ON bt.batch_id = bs.batch_id
-      WHERE bs.student_id = mdn.student_id AND bt.teacher_id = $1
-    )`,
+    // Teacher sees ONLY notifications strictly routed to them
+    `mdn.teacher_id = $1`,
   ];
 
   // resolved filter (default: unresolved only)

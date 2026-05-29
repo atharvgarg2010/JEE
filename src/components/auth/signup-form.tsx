@@ -26,7 +26,6 @@ export function SignupForm() {
       fullName: String(form.get("fullName") ?? ""),
       username: String(form.get("username") ?? "").toLowerCase(),
       rollNumber: String(form.get("rollNumber") ?? ""),
-      batchCode: String(form.get("batchCode") ?? ""),
       password: String(form.get("password") ?? ""),
       confirmPassword: String(form.get("confirmPassword") ?? ""),
     };
@@ -50,7 +49,7 @@ export function SignupForm() {
   return (
     <AuthCard
       title="Create student account"
-      description="Join your batch and start tracking JEE prep"
+      description="Create your account to start tracking JEE prep"
       footer={
         <>
           Already registered?{" "}
@@ -91,13 +90,7 @@ export function SignupForm() {
           error={fieldErrors.rollNumber}
           required
         />
-        <FormField
-          name="batchCode"
-          label="Batch Code"
-          placeholder="ALPHA24"
-          error={fieldErrors.batchCode}
-          required
-        />
+
         <FormField
           name="password"
           label="Password"

@@ -386,9 +386,13 @@ export default function AdminBatchDetailPage() {
               </thead>
               <tbody className="divide-y divide-zinc-800/40">
                 {students.map((s) => (
-                  <tr key={s.student_id} className="transition-colors hover:bg-zinc-800/30">
+                  <tr 
+                    key={s.student_id} 
+                    onClick={() => { window.location.href = `/admin/users/${s.student_id}`; }}
+                    className="transition-colors hover:bg-zinc-800/30 cursor-pointer group"
+                  >
                     <td className="px-5 py-3 whitespace-nowrap">
-                      <p className="font-medium text-white">{s.student_name}</p>
+                      <p className="font-medium text-white group-hover:text-violet-400 transition-colors">{s.student_name}</p>
                       <p className="text-xs text-zinc-500">@{s.student_username}</p>
                     </td>
                     <td className="px-5 py-3 font-mono text-xs text-zinc-400 whitespace-nowrap">{s.roll_number ?? "—"}</td>

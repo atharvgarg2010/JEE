@@ -6,7 +6,7 @@ export interface CreateStudentInput {
   full_name: string;
   username: string;
   roll_number: string;
-  batch_code: string;
+  batch_code?: string | null;
   password_hash: string;
 }
 
@@ -139,7 +139,7 @@ export async function createStudent(
       input.full_name,
       input.username.toLowerCase(),
       input.roll_number,
-      input.batch_code.toUpperCase(),
+      input.batch_code ? input.batch_code.toUpperCase() : null,
       input.password_hash,
     ],
   );

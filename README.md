@@ -123,6 +123,11 @@ src/
 └── types/
 ```
 
+### Application Workflows & Connections
+
+For an in-depth breakdown of the system architecture, database entity relationships, and core workflows (such as Admin academic/batch setup, the offline module logging system, and strict student-to-teacher doubt routing), please check out the comprehensive [Workflow Documentation](file:///r:/JEE%20Tracking/docs/workflow.md).
+
+
 ## Security notes
 
 - Passwords are hashed with **bcrypt** (12 rounds).

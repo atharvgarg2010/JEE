@@ -32,14 +32,21 @@ export async function POST(
 
     const data = await parseRequestBody(req, notifySchema);
 
-    const { notification, created } = await withTimeout(createOrGetModuleDoubtNotification({
-      student_id: user.id,
-      module_set_id: moduleSetId,
-      question_number: data.question_number,
-      status: data.status,
-    }));
+    try {
+      const { notification, created } = await withTimeout(createOrGetModuleDoubtNotification({
+        student_id: user.id,
+        module_set_id: moduleSetId,
+        question_number: data.question_number,
+        status: data.status,
+      }));
 
-    const status = created ? 201 : 200;
-    return jsonSuccess({ notification, created }, status);
+      const status = created ? 201 : 200;
+      return jsonSuccess({ notification, created }, status);
+    } catch (error: any) {
+      if (error.message && error.message.includes("No mapped teacher found")) {
+        return Response.json({ error: error.message }, { status: 400 });
+      }
+      throw error;
+    }
   }, request);
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { CheckCircle2, BookOpen, Loader2 } from "lucide-react";
+import Link from "next/link";
 import type { ModuleDoubtNotification } from "@/types/modules";
 
 export function OfflineModuleDoubtsPanel() {
@@ -127,7 +128,12 @@ export function OfflineModuleDoubtsPanel() {
                   } ${resolvingIds.has(n.id) ? "opacity-40" : ""}`}
                 >
                   <td className="px-3 py-2 font-medium text-white">
-                    {n.student_name}
+                    <Link 
+                      href={`/teacher/students/${n.student_id}`}
+                      className="hover:text-indigo-400 transition-colors inline-block"
+                    >
+                      {n.student_name}
+                    </Link>
                   </td>
                   <td className="px-3 py-2">
                     <span className="text-zinc-300">{n.module_name}</span>

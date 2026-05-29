@@ -21,7 +21,12 @@ export function StudentCard({ student, variant }: StudentCardProps) {
             <User className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-white truncate">{student.name}</p>
+            <Link 
+              href={`/teacher/students/${student.id}`}
+              className="font-semibold text-white truncate hover:text-indigo-400 transition-colors inline-block"
+            >
+              {student.name}
+            </Link>
             <p className="text-xs text-zinc-500">
               {student.questionsAttempted} questions attempted
             </p>

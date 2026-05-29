@@ -6,8 +6,24 @@
 
 export type QuestionStatus = "done" | "doubt" | "revision" | "not_done";
 
+export interface Subject {
+  id: string;
+  name: string;
+  created_at?: string;
+}
+
+export interface Chapter {
+  id: string;
+  subject_id: string;
+  subject_name?: string; // Often joined
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface ModuleSet {
   id: string;
+  chapter_id: string | null;
   subject: string;
   chapter: string;
   module_name: string;

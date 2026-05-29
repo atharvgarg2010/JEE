@@ -19,11 +19,6 @@ export const studentSignupSchema = z
       .min(1, "Roll number is required")
       .max(50)
       .regex(/^[A-Za-z0-9-]+$/, "Invalid roll number format"),
-    batchCode: z
-      .string()
-      .min(2, "Batch code must be at least 2 characters")
-      .max(20)
-      .regex(/^[A-Za-z0-9]+$/, "Batch code must be alphanumeric"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")

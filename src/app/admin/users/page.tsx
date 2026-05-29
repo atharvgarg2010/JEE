@@ -97,23 +97,23 @@ export default function AdminUsersPage() {
           <p className="text-zinc-400">No {tab}s found.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
+        <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-800/80">
-                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Name</th>
+                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Name</th>
                 {tab === "student" ? (
                   <>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Roll No.</th>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Batch</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Roll No.</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Batch</th>
                   </>
                 ) : (
                   <>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Subject</th>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Code</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Subject</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Code</th>
                   </>
                 )}
-                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Joined</th>
+                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Joined</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/40">
@@ -129,14 +129,14 @@ export default function AdminUsersPage() {
                       }
                     }}
                   >
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3 whitespace-nowrap">
                       <p className="font-medium text-white">{u.full_name ?? u.username}</p>
                       <p className="text-xs text-zinc-500">@{u.username}</p>
                     </td>
                     {isStudent ? (
                       <>
-                        <td className="px-5 py-3 font-mono text-xs text-zinc-400">{u.roll_number ?? "—"}</td>
-                        <td className="px-5 py-3">
+                        <td className="px-5 py-3 font-mono text-xs text-zinc-400 whitespace-nowrap">{u.roll_number ?? "—"}</td>
+                        <td className="px-5 py-3 whitespace-nowrap">
                           {u.batch_name ? (
                             <Link
                               href={`/admin/batches/${u.batch_id}`}
@@ -152,7 +152,7 @@ export default function AdminUsersPage() {
                       </>
                     ) : (
                     <>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3 whitespace-nowrap">
                         {u.subject ? (
                           <span className="rounded-full bg-cyan-500/15 px-2.5 py-1 text-xs font-medium text-cyan-300">
                             {u.subject}
@@ -161,10 +161,10 @@ export default function AdminUsersPage() {
                           <span className="text-xs text-zinc-600">—</span>
                         )}
                       </td>
-                      <td className="px-5 py-3 font-mono text-xs text-zinc-400">{u.teacher_code ?? "—"}</td>
+                      <td className="px-5 py-3 font-mono text-xs text-zinc-400 whitespace-nowrap">{u.teacher_code ?? "—"}</td>
                     </>
                   )}
-                  <td className="px-5 py-3 text-xs text-zinc-500">
+                  <td className="px-5 py-3 text-xs text-zinc-500 whitespace-nowrap">
                     {new Date(u.created_at).toLocaleDateString("en-IN", {
                       day: "numeric", month: "short", year: "numeric"
                     })}

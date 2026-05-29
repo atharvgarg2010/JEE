@@ -97,37 +97,37 @@ export default function AdminAnalyticsClient() {
             const batches = data.batches as BatchPerformanceStat[] | undefined;
             if (!batches?.length) return <p className="text-zinc-500 text-sm">No batch data.</p>;
             return (
-              <div className="overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
+              <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-zinc-800/80">
                       {["Batch", "Students", "Teachers", "Avg Accuracy", "Attempts", "Open Doubts"].map((h) => (
-                        <th key={h} className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">{h}</th>
+                        <th key={h} className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/40">
                     {batches.map((b) => (
                       <tr key={b.batch_id} className="hover:bg-zinc-800/30 transition-colors">
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3.5 whitespace-nowrap">
                           <p className="font-medium text-white">{b.batch_name}</p>
                           <p className="text-xs font-mono text-zinc-500">{b.batch_code}</p>
                         </td>
-                        <td className="px-5 py-3.5 text-zinc-300">{b.student_count}</td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3.5 text-zinc-300 whitespace-nowrap">{b.student_count}</td>
+                        <td className="px-5 py-3.5 whitespace-nowrap">
                           <span className={b.teacher_count >= 3 ? "text-emerald-400" : "text-amber-400"}>
                             {b.teacher_count}/3
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3.5 whitespace-nowrap">
                           {b.avg_accuracy !== null ? (
                             <span className={b.avg_accuracy >= 70 ? "text-emerald-400 font-medium" : b.avg_accuracy >= 50 ? "text-amber-400 font-medium" : "text-red-400 font-medium"}>
                               {b.avg_accuracy}%
                             </span>
                           ) : <span className="text-zinc-600">—</span>}
                         </td>
-                        <td className="px-5 py-3.5 text-zinc-300">{b.total_attempts.toLocaleString()}</td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3.5 text-zinc-300 whitespace-nowrap">{b.total_attempts.toLocaleString()}</td>
+                        <td className="px-5 py-3.5 whitespace-nowrap">
                           {b.doubts_pending > 0
                             ? <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400">{b.doubts_pending}</span>
                             : <span className="text-zinc-600">0</span>}
@@ -147,35 +147,35 @@ export default function AdminAnalyticsClient() {
             if (!teachers?.length) return <p className="text-zinc-500 text-sm">No teacher data.</p>;
             return (
               <div className="space-y-6">
-                <div className="overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
+                <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-zinc-800/80">
                         {["Teacher", "Subject", "Batches", "Students", "Questions", "Avg Student Acc.", "Open Doubts"].map((h) => (
-                          <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">{h}</th>
+                          <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/40">
                       {teachers.map((t) => (
                         <tr key={t.teacher_id} className="hover:bg-zinc-800/30 transition-colors">
-                          <td className="px-4 py-3 font-medium text-white">{t.teacher_name}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 font-medium text-white whitespace-nowrap">{t.teacher_name}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
                             {t.subject ? (
                               <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-xs text-cyan-300">{t.subject}</span>
                             ) : <span className="text-zinc-600">—</span>}
                           </td>
-                          <td className="px-4 py-3 text-zinc-300">{t.batches_count}</td>
-                          <td className="px-4 py-3 text-zinc-300">{t.students_count}</td>
-                          <td className="px-4 py-3 text-zinc-300">{t.questions_authored}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-zinc-300 whitespace-nowrap">{t.batches_count}</td>
+                          <td className="px-4 py-3 text-zinc-300 whitespace-nowrap">{t.students_count}</td>
+                          <td className="px-4 py-3 text-zinc-300 whitespace-nowrap">{t.questions_authored}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
                             {t.avg_student_accuracy !== null
                               ? <span className={t.avg_student_accuracy >= 70 ? "text-emerald-400 font-medium" : t.avg_student_accuracy >= 50 ? "text-amber-400 font-medium" : "text-red-400 font-medium"}>
                                   {t.avg_student_accuracy}%
                                 </span>
                               : <span className="text-zinc-600">—</span>}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             {t.unresolved_doubts > 0
                               ? <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400">{t.unresolved_doubts}</span>
                               : <span className="text-zinc-600">0</span>}
@@ -216,8 +216,8 @@ export default function AdminAnalyticsClient() {
             const students = data.students as StudentRanking[] | undefined;
             if (!students?.length) return <p className="text-zinc-500 text-sm">No student data (need 3+ attempts per student).</p>;
             return (
-              <div className="overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
-                <div className="border-b border-zinc-800/60 px-5 py-3">
+              <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
+                <div className="border-b border-zinc-800/60 px-5 py-3 whitespace-nowrap">
                   <p className="text-sm text-zinc-400">
                     Cross-batch rankings <span className="text-zinc-600">· sorted by accuracy (min. 3 attempts)</span>
                   </p>
@@ -226,27 +226,27 @@ export default function AdminAnalyticsClient() {
                   <thead>
                     <tr className="border-b border-zinc-800/80">
                       {["#", "Student", "Batch", "Accuracy", "Questions", "30d Activity"].map((h) => (
-                        <th key={h} className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">{h}</th>
+                        <th key={h} className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/40">
                     {students.map((s) => (
                       <tr key={s.student_id} className="hover:bg-zinc-800/30 transition-colors">
-                        <td className="px-5 py-3.5 text-zinc-600 font-mono text-xs">#{s.rank}</td>
-                        <td className="px-5 py-3.5 font-medium text-white">{s.student_name}</td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3.5 text-zinc-600 font-mono text-xs whitespace-nowrap">#{s.rank}</td>
+                        <td className="px-5 py-3.5 font-medium text-white whitespace-nowrap">{s.student_name}</td>
+                        <td className="px-5 py-3.5 whitespace-nowrap">
                           {s.batch_name
                             ? <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-xs text-violet-300">{s.batch_name}</span>
                             : <span className="text-zinc-600">—</span>}
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3.5 whitespace-nowrap">
                           <span className={`font-semibold ${s.accuracy >= 70 ? "text-emerald-400" : s.accuracy >= 50 ? "text-amber-400" : "text-red-400"}`}>
                             {s.accuracy}%
                           </span>
                         </td>
-                        <td className="px-5 py-3.5 text-zinc-300">{s.questions_attempted}</td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3.5 text-zinc-300 whitespace-nowrap">{s.questions_attempted}</td>
+                        <td className="px-5 py-3.5 whitespace-nowrap">
                           {s.streak > 0 ? (
                             <span className="inline-flex items-center gap-1 text-xs text-amber-400">
                               <TrendingUp className="h-3.5 w-3.5" /> {s.streak} active days

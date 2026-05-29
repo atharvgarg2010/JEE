@@ -81,14 +81,14 @@ export function TeacherAnnouncementsPanel() {
           </Link>
         </div>
       ) : (
-        <div className="rounded-md border border-zinc-800 overflow-hidden">
+        <div className="rounded-md border border-zinc-800 overflow-x-auto custom-scrollbar">
           <table className="w-full text-sm">
             <thead className="border-b border-zinc-800 bg-zinc-900/60">
               <tr>
-                <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Title</th>
-                <th className="hidden px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 sm:table-cell">Batch</th>
-                <th className="hidden px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 md:table-cell">Priority</th>
-                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Reads</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 whitespace-nowrap">Title</th>
+                <th className="hidden px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 sm:table-cell whitespace-nowrap">Batch</th>
+                <th className="hidden px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 md:table-cell whitespace-nowrap">Priority</th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 whitespace-nowrap">Reads</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/60 bg-zinc-900">

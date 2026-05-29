@@ -375,24 +375,24 @@ export default function AdminBatchDetailPage() {
             <p className="text-sm text-zinc-500">No students enrolled yet.</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
+          <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-800/80">
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Student</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Roll No.</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Enrolled</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Student</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Roll No.</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Enrolled</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800/40">
                 {students.map((s) => (
                   <tr key={s.student_id} className="transition-colors hover:bg-zinc-800/30">
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3 whitespace-nowrap">
                       <p className="font-medium text-white">{s.student_name}</p>
                       <p className="text-xs text-zinc-500">@{s.student_username}</p>
                     </td>
-                    <td className="px-5 py-3 font-mono text-xs text-zinc-400">{s.roll_number ?? "—"}</td>
-                    <td className="px-5 py-3 text-xs text-zinc-500">
+                    <td className="px-5 py-3 font-mono text-xs text-zinc-400 whitespace-nowrap">{s.roll_number ?? "—"}</td>
+                    <td className="px-5 py-3 text-xs text-zinc-500 whitespace-nowrap">
                       {new Date(s.enrolled_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     </td>
                   </tr>

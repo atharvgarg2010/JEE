@@ -86,7 +86,7 @@ export function OfflineModuleAnalyticsSection({
   const thCls =
     "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 whitespace-nowrap bg-zinc-950/80 backdrop-blur-sm";
   const thRCls =
-    "px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 bg-zinc-950/80 backdrop-blur-sm";
+    "px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 whitespace-nowrap bg-zinc-950/80 backdrop-blur-sm";
 
   return (
     <div className="mt-8 space-y-3">
@@ -174,7 +174,7 @@ export function OfflineModuleAnalyticsSection({
           No modules match the active filters.
         </div>
       ) : (
-        <div className="overflow-hidden rounded border border-zinc-800/60">
+        <div className="overflow-x-auto custom-scrollbar rounded border border-zinc-800/60">
           <div className="w-full">
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10 border-b border-zinc-800/60">

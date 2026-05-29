@@ -120,13 +120,13 @@ export default function TeacherStudentsPage() {
           ))}
         </div>
       ) : selectedBatch && filtered.length > 0 ? (
-        <div className="overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
+        <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-zinc-800/80 bg-zinc-900/50">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-800/80">
-                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Student</th>
-                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Roll No.</th>
-                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">Enrolled</th>
+                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Student</th>
+                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Roll No.</th>
+                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 whitespace-nowrap">Enrolled</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/40">
@@ -136,12 +136,12 @@ export default function TeacherStudentsPage() {
                   onClick={() => router.push(`/teacher/students/${s.student_id}`)}
                   className="hover:bg-zinc-800/30 transition-colors cursor-pointer group"
                 >
-                  <td className="px-5 py-3.5">
+                  <td className="px-5 py-3.5 whitespace-nowrap">
                     <p className="font-medium text-white group-hover:text-indigo-400 transition-colors">{s.student_name}</p>
                     <p className="text-xs text-zinc-500">@{s.student_username}</p>
                   </td>
-                  <td className="px-5 py-3.5 font-mono text-xs text-zinc-400">{s.roll_number ?? "—"}</td>
-                  <td className="px-5 py-3.5 text-xs text-zinc-500">
+                  <td className="px-5 py-3.5 font-mono text-xs text-zinc-400 whitespace-nowrap">{s.roll_number ?? "—"}</td>
+                  <td className="px-5 py-3.5 text-xs text-zinc-500 whitespace-nowrap">
                     {new Date(s.enrolled_at).toLocaleDateString("en-IN", {
                       day: "numeric", month: "short", year: "numeric"
                     })}

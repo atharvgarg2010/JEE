@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProgressRing } from "@/components/dashboard/progress-ring";
-import { ContributionCalendar } from "@/components/dashboard/contribution-calendar";
 import { StudentDashboardSkeleton } from "@/components/skeletons/dashboard-skeletons";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { StudentAnnouncementsWidget } from "@/components/dashboard/student-announcements-widget";
@@ -234,10 +233,6 @@ export function StudentDashboardClient({ userName }: StudentDashboardClientProps
         </div>
       </section>
 
-      <section className="rounded-md border border-zinc-800 bg-zinc-900 p-6">
-        <h2 className="mb-4 text-lg font-semibold text-white">Daily practice</h2>
-        <ContributionCalendar data={overview.calendar} />
-      </section>
     </div>
   );
 }
